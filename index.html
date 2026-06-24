@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gaza World - AI 3D Exhibition</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Serif SC', serif;
+      overflow: hidden; background: #000;
+    }
+    canvas { display: block; }
+
+    /* ── Loading overlay ── */
+    #loading-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #0a0a0a; color: #e5d9c5;
+      transition: opacity 0.8s ease;
+    }
+    #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+    #loading-overlay .title { font-size: 1.6rem; margin-bottom: 1.5rem; letter-spacing: .15em; }
+
+    .progress-track {
+      width: 280px; height: 3px;
+      background: rgba(229,217,197,.15); border-radius: 2px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; width: 0%; border-radius: 2px;
+      background: linear-gradient(90deg, #c9a96e, #e5d9c5);
+      transition: width .3s ease;
+    }
+    #loading-status { margin-top: .75rem; font-size: .85rem; opacity: .6; }
+
+    /* ── HUD ── */
+    #hud {
+      position: fixed; inset: 0; z-index: 10;
+      pointer-events: none;
+    }
+    #hud > * { pointer-events: auto; }
+
+    /* Title */
+    .hud-top {
+      position: absolute; top: 0; left: 0; right: 0;
+      padding: 1.2rem 1.5rem 1rem;
+      background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, transparent 100%);
+      text-align: center;
+    }
+    .hud-top h1 {
+      font-size: 1.15rem; font-weight: 600;
+      color: #e5d9c5; letter-spacing: .25em;
+    }
+    .hud-top p {
+      font-size: .7rem; color: rgba(229,217,197,.5);
+      letter-spacing: .1em; margin-top: .15rem;
+    }
+
+    /* Scene switching */
+    .scene-btns {
+      position: absolute; bottom: 32px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; gap: 12px;
+    }
+    .scene-btn {
+      padding: .5rem 1.6rem;
+      background: rgba(229,217,197,.08);
+      border: 1px solid rgba(229,217,197,.2);
+      border-radius: 999px;
+      color: rgba(229,217,197,.6);
+      font-family: inherit; font-size: .8rem;
+      letter-spacing: .1em; cursor: pointer;
+      transition: all .3s ease;
+      backdrop-filter: blur(8px);
+    }
+    .scene-btn:hover { background: rgba(229,217,197,.15); color: #e5d9c5; }
+    .scene-btn.active {
+      background: rgba(201,169,110,.25);
+      border-color: #c9a96e; color: #e5d9c5;
+    }
+
+    /* Motion controls */
+    .motion-bar {
+      position: absolute; bottom: 80px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; gap: 6px; align-items: center;
+    }
+    .motion-bar .scene-btn { font-size: .7rem; padding: .35rem 1rem; }
+    .motion-bar .scene-btn.active { background: rgba(201,169,110,.25); border-color: #c9a96e; color: #e5d9c5; }
+
+    /* T2M Panel */
+    #t2m-panel {
+      position: absolute; bottom: 120px; right: 20px;
+      background: rgba(10,10,10,.85);
+      border: 1px solid rgba(229,217,197,.15);
+      border-radius: 10px;
+      backdrop-filter: blur(12px);
+      min-width: 220px; overflow: hidden;
+      pointer-events: auto;
+    }
+    .t2m-header {
+      padding: .55rem 1rem;
+      color: #e5d9c5; font-size: .75rem; letter-spacing: .05em;
+      cursor: pointer; user-select: none;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .t2m-header:hover { background: rgba(229,217,197,.06); }
+    #t2m-arrow { transition: transform .2s; font-size: .65rem; }
+    #t2m-arrow.collapsed { transform: rotate(-90deg); }
+    .t2m-body {
+      padding: 0 1rem .75rem;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .t2m-body.hidden { display: none; }
+    .t2m-body select,
+    .t2m-body input {
+      background: rgba(229,217,197,.08);
+      border: 1px solid rgba(229,217,197,.15);
+      border-radius: 6px; padding: .4rem .6rem;
+      color: #e5d9c5; font-size: .7rem;
+      font-family: inherit; outline: none;
+    }
+    .t2m-body select:focus,
+    .t2m-body input:focus { border-color: #c9a96e; }
+    .t2m-body select option { background: #1a1a1a; color: #e5d9c5; }
+    .t2m-body input::placeholder { color: rgba(229,217,197,.3); }
+    .t2m-body .scene-btn {
+      padding: .35rem; font-size: .7rem; text-align: center;
+    }
+    .t2m-body .scene-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+    /* ── Character view panel ── */
+    #char-panel {
+      position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
+      width: 240px; z-index: 15; pointer-events: auto;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    #char-panel.hidden { display: none; }
+    .char-info {
+      text-align: center; padding: .6rem;
+      color: #e5d9c5;
+    }
+    .char-info .name { font-size: 1rem; font-weight: 600; letter-spacing: .1em; }
+    .char-info .motion { font-size: .7rem; color: rgba(229,217,197,.4); margin-top: 2px; }
+    .cp-section {
+      background: rgba(10,10,10,.7);
+      border: 1px solid rgba(229,217,197,.1);
+      border-radius: 10px; padding: .6rem .75rem;
+      backdrop-filter: blur(12px);
+    }
+    .cp-section h3 {
+      font-size: .6rem; text-transform: uppercase;
+      letter-spacing: .12em; color: rgba(229,217,197,.3);
+      margin-bottom: .4rem;
+    }
+    .cp-presets {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+    }
+    #cp-switch { grid-template-columns: repeat(3, 1fr); }
+    .cp-presets button {
+      padding: .35rem; font-size: .65rem;
+      background: rgba(229,217,197,.06);
+      border: 1px solid rgba(229,217,197,.1);
+      border-radius: 6px; color: rgba(229,217,197,.5);
+      cursor: pointer; transition: all .2s;
+      font-family: inherit;
+    }
+    .cp-presets button:hover { background: rgba(229,217,197,.1); color: #e5d9c5; }
+    .cp-presets button.active { background: rgba(201,169,110,.2); border-color: #c9a96e; color: #e5d9c5; }
+
+    .cp-input-row {
+      display: flex; gap: 4px;
+    }
+    .cp-input-row input {
+      flex: 1; background: rgba(229,217,197,.06);
+      border: 1px solid rgba(229,217,197,.1);
+      border-radius: 6px; padding: .35rem .5rem;
+      color: #e5d9c5; font-size: .65rem;
+      font-family: inherit; outline: none;
+    }
+    .cp-input-row input:focus { border-color: #c9a96e; }
+    .cp-input-row input::placeholder { color: rgba(229,217,197,.2); }
+    .cp-input-row button {
+      padding: .35rem .65rem; font-size: .65rem;
+      background: rgba(201,169,110,.2);
+      border: 1px solid #c9a96e;
+      border-radius: 6px; color: #e5d9c5;
+      cursor: pointer; font-family: inherit;
+      transition: all .2s;
+    }
+    .cp-input-row button:hover { background: rgba(201,169,110,.35); }
+    .cp-input-row button:disabled { opacity: .3; cursor: not-allowed; }
+
+    /* Loading hint (scene switch) */
+    #scene-loading {
+      position: absolute; bottom: 90px; left: 50%;
+      transform: translateX(-50%);
+      color: rgba(229,217,197,.7);
+      font-size: .8rem; letter-spacing: .05em;
+      opacity: 0; transition: opacity .4s;
+    }
+    #scene-loading.show { opacity: 1; }
+
+    /* Control hint */
+    .hud-bottom-hint {
+      position: absolute; bottom: 55px; left: 50%;
+      transform: translateX(-50%);
+      font-size: .65rem; color: rgba(229,217,197,.25);
+      letter-spacing: .08em; white-space: nowrap;
+    }
+
+    /* Error */
+    #error-msg {
+      position: fixed; bottom: 50%; left: 50%;
+      transform: translate(-50%, 50%); z-index: 200;
+      background: rgba(180,60,60,.9);
+      color: #f0e0d0; padding: 1rem 2rem;
+      border-radius: 8px; font-size: .9rem;
+      text-align: center; display: none;
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(180,60,60,.4);
+    }
+
+    /* ── Home page ── */
+    #home-view {
+      position: fixed; inset: 0; z-index: 50;
+      background: #0a0a0a; color: #e5d9c5;
+      overflow-y: auto; display: flex;
+      flex-direction: column; align-items: center;
+      padding: 3rem 1.5rem 4rem;
+    }
+    #home-view.hidden { display: none; }
+    #home-view h1 {
+      font-size: 1.8rem; font-weight: 700;
+      letter-spacing: .15em; margin-bottom: .25rem;
+    }
+    #home-view .subtitle {
+      font-size: .8rem; color: rgba(229,217,197,.4);
+      letter-spacing: .1em; margin-bottom: 2.5rem;
+    }
+    .home-section {
+      width: 100%; max-width: 720px; margin-bottom: 2rem;
+    }
+    .home-section h2 {
+      font-size: .85rem; text-transform: uppercase;
+      letter-spacing: .15em; color: rgba(229,217,197,.3);
+      margin-bottom: .75rem; padding-left: .25rem;
+    }
+    .home-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .home-card {
+      background: rgba(229,217,197,.04);
+      border: 1px solid rgba(229,217,197,.1);
+      border-radius: 12px; padding: 1.25rem 1rem;
+      cursor: pointer; transition: all .3s ease;
+      text-align: center;
+    }
+    .home-card:hover {
+      background: rgba(229,217,197,.08);
+      border-color: rgba(229,217,197,.25);
+      transform: translateY(-2px);
+    }
+    .home-card .icon { font-size: 1.6rem; margin-bottom: .5rem; }
+    .home-card .name { font-size: .9rem; font-weight: 600; margin-bottom: .2rem; }
+    .home-card .desc { font-size: .65rem; color: rgba(229,217,197,.4); }
+
+    /* ── View container ── */
+    .view-3d { position: fixed; inset: 0; z-index: 10; }
+    .view-3d.hidden { display: none; }
+    .back-btn {
+      position: absolute; top: 16px; left: 16px; z-index: 20;
+      padding: .4rem 1rem; font-size: .75rem;
+      background: rgba(0,0,0,.5); border: 1px solid rgba(229,217,197,.15);
+      border-radius: 6px; color: rgba(229,217,197,.6);
+      cursor: pointer; backdrop-filter: blur(8px);
+      transition: all .3s;
+    }
+    .back-btn:hover { background: rgba(229,217,197,.1); color: #e5d9c5; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ Home Page ═══ -->
+  <div id="home-view">
+    <h1>Gaza World</h1>
+    <div class="subtitle">AI 3D Exhibition</div>
+
+    <div class="home-section">
+      <h2>Scenes</h2>
+      <div class="home-grid" id="scene-cards"></div>
+    </div>
+
+    <div class="home-section">
+      <h2>Characters</h2>
+      <div class="home-grid" id="char-cards"></div>
+    </div>
+  </div>
+
+  <!-- ═══ 3D View ═══ -->
+  <div id="view-3d" class="view-3d hidden">
+    <button class="back-btn" id="back-btn">← Back</button>
+
+    <!-- ═══ Loading Overlay ═══ -->
+    <div id="loading-overlay">
+      <div class="title">Gaza World · AI 3D Exhibition</div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div id="loading-status">Initializing…</div>
+    </div>
+
+    <!-- ═══ HUD ═══ -->
+    <div id="hud">
+      <div class="hud-top">
+        <h1>Gaza World · AI 3D Exhibition</h1>
+        <p>Gaza World · AI 3D Exhibition</p>
+      </div>
+
+      <div class="scene-btns" id="scene-btns">
+        <button class="scene-btn active" data-idx="0">Scene 1</button>
+        <button class="scene-btn" data-idx="1">Scene 2</button>
+      </div>
+
+      <div class="motion-bar" id="motion-bar">
+        <button class="scene-btn" id="motion-all">⏸ All</button>
+        <button class="scene-btn char-btn" data-char="0">Hathor ▶</button>
+        <button class="scene-btn char-btn" data-char="1">Menkaure ▶</button>
+      </div>
+
+      <!-- ═══ T2M Panel ═══ -->
+      <div id="t2m-panel">
+        <div class="t2m-header" id="t2m-toggle">⚡ Text-to-Motion <span id="t2m-arrow">▾</span></div>
+        <div class="t2m-body" id="t2m-body">
+          <select id="t2m-target">
+            <option value="0">The Goddess Hathor</option>
+            <option value="1">King Menkaure</option>
+            <option value="2">Ranefer</option>
+          </select>
+          <input id="t2m-prompt" type="text" placeholder="Describe the motion…" />
+          <button id="t2m-btn" class="scene-btn">Generate</button>
+        </div>
+      </div>
+
+      <div id="scene-loading">Loading scene…</div>
+      <div class="hud-bottom-hint">Drag to rotate · Scroll to zoom</div>
+    </div>
+
+    <div id="error-msg"></div>
+
+    <!-- ═══ Character View Panel ═══ -->
+    <div id="char-panel" class="hidden">
+      <div class="char-info">
+        <div class="name" id="cp-name">Char</div>
+        <div class="motion" id="cp-motion">Default</div>
+      </div>
+
+      <div class="cp-section">
+        <h3>Switch Character</h3>
+        <div class="cp-presets" id="cp-switch">
+          <button data-idx="0">Hathor</button>
+          <button data-idx="1">Menkaure</button>
+          <button data-idx="2">Ranefer</button>
+        </div>
+      </div>
+
+      <div class="cp-section">
+        <h3>Motion Presets</h3>
+        <div class="cp-presets" id="cp-presets">
+          <button data-motion="1">1</button>
+          <button data-motion="2">2</button>
+          <button data-motion="3">3</button>
+          <button data-motion="4">4</button>
+          <button data-motion="5">5</button>
+        </div>
+      </div>
+
+      <div class="cp-section">
+        <h3>Text to Motion</h3>
+        <div class="cp-input-row">
+          <input id="t2m-input" type="text" placeholder="Describe the motion…" />
+          <button id="t2m-go">Generate</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Import Map ═══ -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+      "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/2.1.0/spark.module.js"
+    }
+  }
+  </script>
+
+  <!-- ═══ Main script ═══ -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { SparkRenderer, SplatMesh } from '@sparkjsdev/spark';
+    import { DragControls } from 'three/addons/controls/DragControls.js';
+
+    /* ─── Config ─── */
+    const SCENE_FILES = [
+      'scene/1/2f07d44a6b43046c9d3208f2dd6f4e17.ply',
+      'scene/2/2e184245233163d44ec1ea2692df242b.ply',
+    ];
+
+    const CHAR_FILES = [
+      'motion/1/ancient+egyptian+statue+3d+model (1).glb',
+      'motion/2/ancient+statue+3d+model.glb',
+      'motion/4/stone+statue+3d+model.glb',
+    ];
+
+    const CHAR_ANIM_SETS = [null, null, null];
+
+    function buildAnimSets() {
+      CHAR_ANIM_SETS[0] = [
+        'motion/1/ancient+egyptian+statue+3d+model (1).glb',
+        'motion/1/ancient+egyptian+statue+3d+model (2).glb',
+        'motion/1/ancient+egyptian+statue+3d+model (3).glb',
+        'motion/1/ancient+egyptian+statue+3d+model (4).glb',
+        'motion/1/ancient+egyptian+statue+3d+model (5).glb',
+      ];
+      CHAR_ANIM_SETS[1] = [
+        'motion/2/ancient+statue+3d+model.glb',
+        'motion/2/ancient+statue+3d+model2.glb',
+        'motion/2/ancient+statue+3d+model3.glb',
+        'motion/2/ancient+statue+3d+model4.glb',
+      ];
+      CHAR_ANIM_SETS[2] = [
+        'motion/4/stone+statue+3d+model.glb',
+        'motion/4/stone+statue+3d+model2 (2).glb',
+        'motion/4/stone+statue+3d+model2 (3).glb',
+        'motion/4/stone+statue+3d+model2 (4).glb',
+        'motion/4/stone+statue+3d+model2 (5).glb',
+      ];
+    }
+    buildAnimSets();
+
+    const CHAR_POSITIONS = [
+      [{ p: [-1.2, 0, 1.0], r: Math.PI / 8 }, { p: [ 1.2, 0, 1.0], r: -Math.PI / 8 }],
+      [{ p: [-1.2, 0, 1.0], r: Math.PI / 8 }, { p: [ 1.2, 0, 1.0], r: -Math.PI / 8 }],
+    ];
+
+    const SCENE_CAMERAS = [
+      { pos: [-0.93, 1.69, -3.95], target: [0, 0.8, 0] },
+      { pos: [-2.86, 1.52, 0.78], target: [0, 0.8, 0] },
+    ];
+
+    /* ─── DOM refs ─── */
+    const overlay   = document.getElementById('loading-overlay');
+    const fillBar   = document.getElementById('progress-fill');
+    const loadStat  = document.getElementById('loading-status');
+    const sceneLoad = document.getElementById('scene-loading');
+    const errMsg    = document.getElementById('error-msg');
+    const btns      = document.querySelectorAll('.scene-btn');
+    const homeView  = document.getElementById('home-view');
+    const view3d    = document.getElementById('view-3d');
+    const hudEl     = document.getElementById('hud');
+    const charPanel = document.getElementById('char-panel');
+
+    const NAV_CARDS = [
+      { section: 'scene-cards', type: 'scene', idx: 0, icon: '🏛️', name: 'Scene 1', desc: '' },
+      { section: 'scene-cards', type: 'scene', idx: 1, icon: '🏛️', name: 'Scene 2', desc: '' },
+      { section: 'char-cards', type: 'character', idx: 0, icon: '🕺', name: 'The Goddess Hathor', desc: '5 animations' },
+      { section: 'char-cards', type: 'character', idx: 1, icon: '🕺', name: 'King Menkaure', desc: '4 animations' },
+      { section: 'char-cards', type: 'character', idx: 2, icon: '🕺', name: 'Ranefer', desc: '5 animations' },
+    ];
+
+    function generateCards() {
+      NAV_CARDS.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'home-card';
+        div.innerHTML = `<div class="icon">${c.icon}</div><div class="name">${c.name}</div>${c.desc ? `<div class="desc">${c.desc}</div>` : ''}`;
+        div.addEventListener('click', () => switchView(c.type, c.idx));
+        document.getElementById(c.section).appendChild(div);
+      });
+    }
+    generateCards();
+
+    let currentView = 'home';
+    let loadedScenes = new Set();
+    let loadedChars = false;
+
+    function switchView(type, idx) {
+      if (type === 'home') {
+        currentView = 'home';
+        homeView.classList.remove('hidden');
+        view3d.classList.add('hidden');
+        charPanel.classList.add('hidden');
+        return;
+      }
+
+      currentView = type + idx;
+      homeView.classList.add('hidden');
+      view3d.classList.remove('hidden');
+      renderer.domElement.style.display = 'block';
+
+      if (type === 'scene') {
+        hudEl.style.display = '';
+        charPanel.classList.add('hidden');
+        if (!loadedScenes.has(idx)) {
+          loadSceneView(idx);
+        } else if (idx !== currentSceneIdx) {
+          switchScene(idx);
+        }
+      } else if (type === 'character') {
+        hudEl.style.display = 'none';
+        charPanel.classList.remove('hidden');
+        loadCharacterView(idx);
+      }
+    }
+
+    document.getElementById('back-btn').addEventListener('click', () => switchView('home', 0));
+
+    /* ─── Three.js setup ─── */
+    const scene    = new THREE.Scene();
+    const camera   = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(...SCENE_CAMERAS[0].pos);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.6;
+    document.body.prepend(renderer.domElement);
+
+    const sparkRenderer = new SparkRenderer({
+      renderer,
+      covSplats: true,
+      enable2DGS: true,
+      maxStdDev: 3.5,
+      blurAmount: 0.2,
+    });
+    scene.add(sparkRenderer);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(...SCENE_CAMERAS[0].target);
+    window.getView = () => console.log(JSON.stringify({ pos: camera.position.toArray(), target: controls.target.toArray() }));
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.minDistance   = 1.5;
+    controls.maxDistance   = 15;
+    controls.maxPolarAngle = Math.PI / 2.1;
+    controls.update();
+
+    /* ─── Lighting ─── */
+    const ambient = new THREE.AmbientLight(0xffffff, 1.2);
+    scene.add(ambient);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
+    dirLight.position.set(5, 10, 7);
+    scene.add(dirLight);
+
+    /* ─── SplatScene management ─── */
+    let currentSplatMesh = null;
+    const SCENE_ROTATIONS = [
+      { x: -Math.PI / 2, y: 0, z: 0 },
+      { x: -Math.PI / 2, y: 0, z: 0 },
+    ];
+
+    function loadSplatScene(idx) {
+      return new Promise((resolve) => {
+        if (currentSplatMesh) scene.remove(currentSplatMesh);
+        const mesh = new SplatMesh({
+          url: SCENE_FILES[idx],
+          onProgress: (pct) => {
+            setProgress(10 + pct * 30, `Loading 3D scene…`);
+          },
+        });
+        const r = SCENE_ROTATIONS[idx];
+        mesh.rotation.set(r.x, r.y, r.z);
+        scene.add(mesh);
+        currentSplatMesh = mesh;
+        setTimeout(() => resolve(mesh), 2000);
+      });
+    }
+
+    /* ─── Character management ─── */
+    const gltfLoader = new GLTFLoader();
+    let charModels   = [];
+    const CHAR_NAMES = ['The Goddess Hathor', 'King Menkaure', 'Ranefer'];
+
+    const charStates = CHAR_NAMES.map(name => ({
+      name,
+      paused: false,
+      mixer: null,
+      action: null,
+      animName: '',
+      extraClips: null,
+    }));
+
+    function setProgress(pct, text) {
+      fillBar.style.width = Math.min(pct, 100) + '%';
+      if (text) loadStat.textContent = text;
+    }
+
+    async function loadCharacters(onProgress) {
+      const total = CHAR_FILES.length;
+      const results = [];
+      for (let i = 0; i < total; i++) {
+        try {
+          const gltf = await new Promise((resolve, reject) => {
+            gltfLoader.load(CHAR_FILES[i], resolve, undefined, reject);
+          });
+          results.push(gltf);
+        } catch (e) {
+          console.warn(`Char ${i} load failed:`, e);
+          results.push(null);
+        }
+        onProgress?.((i + 1) / total, `Loading model ${i + 1}/${total}…`);
+      }
+      return results;
+    }
+
+    const charGroup = new THREE.Group();
+    scene.add(charGroup);
+
+    function clearCharacters() {
+      charStates.forEach(s => { s.mixer = null; s.action = null; s.extraClips = null; });
+      while (charGroup.children.length) {
+        charGroup.remove(charGroup.children[0]);
+      }
+    }
+
+    function placeCharacters(sceneIdx, maxChars = 2) {
+      clearCharacters();
+      // Characters disabled in scene view
+      updateMasterButton();
+      setTimeout(() => updateDragObjects(), 100);
+    }
+
+    /* Update single char button */
+    function updateCharButton(i) {
+      const btn = document.querySelector(`.char-btn[data-char="${i}"]`);
+      if (!btn) return;
+      const state = charStates[i];
+      if (!state.action) {
+        btn.textContent = `${CHAR_NAMES[i]} ✗`;
+        btn.classList.remove('active');
+        return;
+      }
+      btn.textContent = state.paused ? `${CHAR_NAMES[i]} ▶` : `${CHAR_NAMES[i]} ⏸`;
+      btn.classList.toggle('active', !state.paused);
+    }
+
+    /* Update master button */
+    function updateMasterButton() {
+      const allPaused = charStates.every(s => !s.action || s.paused);
+      const allActive = charStates.some(s => s.action);
+      const btn = document.getElementById('motion-all');
+      if (!allActive) { btn.textContent = '⏸ All'; return; }
+      btn.textContent = allPaused ? '▶ All' : '⏸ All';
+    }
+
+    /* ─── Scene switching ─── */
+    let currentSceneIdx = -1;
+
+    async function switchScene(idx) {
+      if (idx === currentSceneIdx) return;
+      sceneLoad.classList.add('show');
+      sceneLoad.textContent = 'Switching scene…';
+
+      try {
+        await loadSplatScene(idx);
+      } catch (e) {
+        console.error('Scene load failed:', e);
+        showError(`Scene ${idx + 1} failed to load`);
+        sceneLoad.classList.remove('show');
+        return;
+      }
+
+      const cam = SCENE_CAMERAS[idx];
+      camera.position.set(cam.pos[0], cam.pos[1], cam.pos[2]);
+      controls.target.set(cam.target[0], cam.target[1], cam.target[2]);
+      controls.update();
+
+      placeCharacters(idx);
+      currentSceneIdx = idx;
+      sceneLoad.classList.remove('show');
+      btns.forEach(b => b.classList.toggle('active', +b.dataset.idx === idx));
+    }
+
+    function showError(msg) {
+      errMsg.textContent = msg;
+      errMsg.style.display = 'block';
+      setTimeout(() => { errMsg.style.display = 'none'; }, 6000);
+    }
+
+    /* ─── View loaders ─── */
+    async function loadSceneView(idx) {
+      controls.minDistance = 1.5;
+      controls.maxDistance = 15;
+      controls.maxPolarAngle = Math.PI / 2.1;
+
+      overlay.classList.remove('hidden');
+      overlay.style.display = '';
+      setProgress(0, 'Initializing…');
+      await new Promise(r => setTimeout(r, 200));
+
+      if (!loadedChars) {
+        setProgress(5, 'Loading characters…');
+        charModels = await loadCharacters((ratio, text) => {
+          setProgress(5 + ratio * 40, text);
+        });
+        loadedChars = true;
+        setProgress(45, 'Characters ready');
+      }
+
+      setProgress(50, 'Loading 3D scene…');
+      try {
+        await loadSplatScene(idx);
+      } catch (e) {
+        console.error('Scene load failed:', e);
+        showError('Scene load failed');
+      }
+      setProgress(80, 'Scene ready');
+
+      placeCharacters(idx);
+      currentSceneIdx = idx;
+      loadedScenes.add(idx);
+      setProgress(100, 'All ready');
+
+      await new Promise(r => setTimeout(r, 400));
+      overlay.classList.add('hidden');
+      setTimeout(() => { overlay.style.display = 'none'; }, 900);
+    }
+
+    let charViewIdx = -1;
+
+    async function loadCharacterView(idx) {
+      if (currentSplatMesh) {
+        scene.remove(currentSplatMesh);
+        currentSplatMesh = null;
+      }
+
+      overlay.classList.remove('hidden');
+      overlay.style.display = '';
+      setProgress(10, 'Loading…');
+      await new Promise(r => setTimeout(r, 200));
+
+      if (!loadedChars) {
+        charModels = await loadCharacters((ratio, text) => {
+          setProgress(10 + ratio * 50, text);
+        });
+        loadedChars = true;
+      }
+
+      setProgress(70, 'Preparing…');
+      clearCharacters();
+
+      const model = charModels[idx];
+      if (model) {
+        const handle = new THREE.Mesh(
+          new THREE.BoxGeometry(1.4, 2.2, 1.4),
+          new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+        );
+        handle.position.set(0, 1, 0);
+        handle.rotation.y = -Math.PI / 2;
+
+        const m = model.scene;
+        m.scale.set(3, 3, 3);
+        m.position.set(0, -1, 0);
+        handle.add(m);
+        charGroup.add(handle);
+
+        const state = charStates[idx];
+        if (model.animations?.length) {
+          state.mixer = new THREE.AnimationMixer(m);
+          state.action = state.mixer.clipAction(model.animations[0]);
+          state.action.play();
+          state.paused = false;
+          state.animName = 'Anim 1';
+        }
+
+        const animFiles = CHAR_ANIM_SETS[idx];
+        if (animFiles) {
+          state.extraClips = [];
+          for (let i = 1; i < animFiles.length; i++) {
+            try {
+              const gltf = await new Promise((resolve, reject) => {
+                gltfLoader.load(animFiles[i], resolve, undefined, reject);
+              });
+              if (gltf.animations?.length) {
+                state.extraClips.push(gltf.animations[0]);
+              }
+            } catch (e) {
+              console.warn(`Anim ${i} load failed:`, e);
+            }
+          }
+        }
+      }
+
+      camera.position.set(0, 1.2, 4);
+      controls.target.set(0, 1.2, 0);
+      controls.minDistance = 1;
+      controls.maxDistance = 20;
+      controls.maxPolarAngle = Math.PI;
+      controls.update();
+
+      charViewIdx = idx;
+
+      document.getElementById('cp-name').textContent = CHAR_NAMES[idx] || `Char ${idx}`;
+      const state = charStates[idx];
+      document.getElementById('cp-motion').textContent = state?.animName || 'Default';
+
+      setProgress(100, 'Ready');
+      await new Promise(r => setTimeout(r, 300));
+      overlay.classList.add('hidden');
+      setTimeout(() => { overlay.style.display = 'none'; }, 900);
+    }
+
+    /* ─── Initialization ─── */
+    async function init() {
+      setProgress(0, 'Initializing…');
+      await new Promise(r => setTimeout(r, 100));
+      overlay.classList.add('hidden');
+      setTimeout(() => { overlay.style.display = 'none'; }, 500);
+    }
+
+    init().catch(e => {
+      console.error(e);
+      showError('Init failed: ' + e.message);
+      overlay.classList.add('hidden');
+    });
+
+    /* ─── Event bindings ─── */
+    btns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = +btn.dataset.idx;
+        if (idx === currentSceneIdx) return;
+        if (charModels.length === 0) return;
+        switchScene(idx);
+      });
+    });
+
+    document.getElementById('motion-all').addEventListener('click', () => {
+      const allPaused = charStates.every(s => !s.action || s.paused);
+      charStates.forEach(s => {
+        if (s.action) {
+          s.paused = !allPaused;
+          s.action.paused = s.paused;
+        }
+      });
+      updateMasterButton();
+      document.querySelectorAll('.char-btn').forEach((_, i) => updateCharButton(i));
+    });
+
+    document.querySelectorAll('.char-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = +btn.dataset.char;
+        const s = charStates[i];
+        if (!s.action) return;
+        s.paused = !s.paused;
+        s.action.paused = s.paused;
+        updateCharButton(i);
+        updateMasterButton();
+      });
+    });
+
+    let dragControls = null;
+    function updateDragObjects() {
+      const objects = [];
+      charGroup.children.forEach(c => { if (c.isMesh) objects.push(c); });
+      if (!dragControls) {
+        dragControls = new DragControls(objects, camera, renderer.domElement);
+        dragControls.addEventListener('dragstart', () => { controls.enabled = false; });
+        dragControls.addEventListener('drag', (e) => {
+          e.object.position.z = Math.max(0.8, e.object.position.z);
+        });
+        dragControls.addEventListener('dragend', () => { controls.enabled = true; });
+      } else {
+        while (dragControls.objects.length) dragControls.objects.pop();
+        objects.forEach(o => dragControls.objects.push(o));
+      }
+    }
+
+    let t2mCollapsed = false;
+    document.getElementById('t2m-toggle').addEventListener('click', () => {
+      t2mCollapsed = !t2mCollapsed;
+      document.getElementById('t2m-body').classList.toggle('hidden', t2mCollapsed);
+      document.getElementById('t2m-arrow').classList.toggle('collapsed', t2mCollapsed);
+    });
+
+    document.getElementById('t2m-btn').addEventListener('click', () => {
+      const target = document.getElementById('t2m-target').value;
+      const prompt = document.getElementById('t2m-prompt').value.trim();
+      if (!prompt) return;
+      console.log(`[T2M] char ${target}: "${prompt}" — API not yet connected`);
+      showError('T2M API coming soon');
+    });
+
+    // ── Character panel events ──
+    document.querySelectorAll('#cp-switch button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = +btn.dataset.idx;
+        if (idx === charViewIdx) return;
+        document.querySelectorAll('#cp-switch button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        switchView('character', idx);
+      });
+    });
+
+    document.querySelectorAll('#cp-presets button').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const motionIdx = parseInt(btn.dataset.motion) - 1;
+        document.getElementById('cp-motion').textContent = `Anim ${motionIdx + 1}`;
+        document.querySelectorAll('#cp-presets button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const state = charStates[charViewIdx];
+        if (state?.extraClips && state.mixer) {
+          if (motionIdx === 0) {
+            const defaultClip = state.action._clip;
+            state.action.stop();
+            state.action = state.mixer.clipAction(defaultClip);
+            state.action.play();
+          } else {
+            const clip = state.extraClips[motionIdx - 1];
+            if (clip) {
+              state.action.stop();
+              state.action = state.mixer.clipAction(clip);
+              state.action.play();
+            }
+          }
+        }
+      });
+    });
+
+    document.getElementById('t2m-go').addEventListener('click', () => {
+      const prompt = document.getElementById('t2m-input').value.trim();
+      if (!prompt) { showError('Please describe the motion'); return; }
+      console.log(`[T2M] prompt: "${prompt}"`);
+      showError('T2M API coming soon');
+    });
+    document.getElementById('t2m-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('t2m-go').click();
+    });
+
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth, h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+
+    /* ─── Animation loop ─── */
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+
+      charStates.forEach(s => {
+        if (!s.paused && s.mixer) {
+          s.mixer.update(dt);
+        }
+      });
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
