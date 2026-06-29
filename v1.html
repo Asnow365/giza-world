@@ -308,10 +308,20 @@
       font-size: .58rem; text-transform: uppercase;
       letter-spacing: .1em; color: rgba(229,217,197,.35); margin-bottom: .4rem;
     }
+    .rp-section select, .rp-section textarea {
+      width: 100%; padding: .4rem .5rem;
+      background: rgba(229,217,197,.06);
+      border: 1px solid rgba(229,217,197,.1);
+      border-radius: 6px; color: #e5d9c5;
+      font: inherit; font-size: .65rem; outline: none;
+    }
+    .rp-section select:focus, .rp-section textarea:focus { border-color: #c9a96e; }
+    .rp-section select option { background: #1a1a1a; color: #e5d9c5; }
+    .rp-section textarea { min-height: 70px; resize: vertical; }
 
     /* Tour Panel */
     .tp-loc { font-size: .8rem; font-weight: 600; color: #e5d9c5; }
-    .tp-npc { display: flex; align-items: center; gap: 8px; }
+    .tp-npc { display: flex; align-items: center; gap: 8px; padding: .3rem 0; }
     .tp-av {
       width: 38px; height: 38px; border-radius: 10px;
       background: linear-gradient(145deg,#fff2d0,#b96c2d);
@@ -326,10 +336,7 @@
     .tp-obj { color: #c9a96e; font-size: .68rem; padding: .4rem; background: rgba(201,169,110,.06); border-left: 2px solid #c9a96e; border-radius: 0 4px 4px 0; margin: .4rem 0; }
     .tp-acc { font-size: .6rem; color: rgba(229,217,197,.3); font-style: italic; }
     .tp-badges { display: flex; flex-wrap: wrap; gap: 3px; }
-    .tp-badge {
-      font-size: .55rem; font-weight: 700; letter-spacing: .04em;
-      padding: 2px 7px; border-radius: 999px; text-transform: uppercase;
-    }
+    .tp-badge { font-size: .55rem; font-weight: 700; letter-spacing: .04em; padding: 2px 7px; border-radius: 999px; text-transform: uppercase; }
     .tp-badge.source { background: rgba(49,95,43,.25); color: #8fbc8f; border: 1px solid rgba(49,95,43,.4); }
     .tp-badge.reconstructed { background: rgba(118,81,18,.25); color: #e2c87a; border: 1px solid rgba(118,81,18,.4); }
     .tp-badge.speculative { background: rgba(138,47,26,.25); color: #e8a090; border: 1px solid rgba(138,47,26,.4); }
@@ -339,22 +346,49 @@
       width: 100%; padding: .4rem .6rem; background: rgba(229,217,197,.04);
       border: 1px solid rgba(229,217,197,.1); border-radius: 6px;
       color: #e5d9c5; font: inherit; font-size: .65rem; cursor: pointer; text-align: left;
-      transition: all .2s;
     }
     .tp-choices button:hover { background: rgba(201,169,110,.12); border-color: #c9a96e; }
     .tp-trans { list-style: none; font-size: .6rem; color: rgba(229,217,197,.3); max-height: 100px; overflow-y: auto; }
     .tp-trans li { padding: .2rem 0; border-bottom: 1px solid rgba(229,217,197,.04); }
 
+    /* Agent Panel */
+    #agent-panel { z-index: 22; }
+    .ag-welcome { text-align: center; padding: .5rem 0; }
+    .ag-welcome .ag-icon { font-size: 1.5rem; margin-bottom: .3rem; }
+    .ag-welcome h4 { font-size: .75rem; color: #e5d9c5; margin: .2rem 0; }
+    .ag-welcome p { font-size: .58rem; color: rgba(229,217,197,.3); }
+    .ag-chips { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: .5rem; }
+    .ag-chip {
+      padding: .18rem .5rem; font-size: .55rem;
+      background: rgba(229,217,197,.04); border: 1px solid rgba(229,217,197,.08);
+      border-radius: 999px; color: rgba(229,217,197,.35); cursor: pointer; font: inherit;
+    }
+    .ag-chip:hover { background: rgba(201,169,110,.12); color: #e5d9c5; border-color: rgba(201,169,110,.3); }
+    .ag-msgs { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: .5rem; }
+    .ag-msg { max-width: 92%; padding: .45rem .6rem; border-radius: 10px; font-size: .65rem; line-height: 1.5; }
+    .ag-msg.usr { align-self: flex-end; background: rgba(201,169,110,.15); border: 1px solid rgba(201,169,110,.22); color: #e5d9c5; }
+    .ag-msg.bot { align-self: flex-start; background: rgba(229,217,197,.04); border: 1px solid rgba(229,217,197,.08); color: #e5d9c5; }
+    .ag-msg.bot .ag-lbl { font-size: .52rem; color: #4ade80; font-weight: 700; margin-bottom: .2rem; }
+    .ag-input { display: flex; gap: 4px; border-top: 1px solid rgba(229,217,197,.06); padding-top: .5rem; }
+    .ag-input input {
+      flex: 1; padding: .4rem .5rem; background: rgba(229,217,197,.05);
+      border: 1px solid rgba(229,217,197,.1); border-radius: 6px;
+      color: #e5d9c5; font: inherit; font-size: .65rem; outline: none;
+    }
+    .ag-input button {
+      padding: .4rem .7rem; background: rgba(74,222,128,.15);
+      border: 1px solid rgba(74,222,128,.3); border-radius: 6px;
+      color: #4ade80; font: inherit; font-size: .65rem; font-weight: 600; cursor: pointer;
+    }
+
     /* AI Studio Panel */
-    #ai-panel { z-index: 22; }
+    #ai-panel { z-index: 23; }
     .ai-tabs { display: flex; gap: 2px; background: rgba(229,217,197,.03); border-radius: 8px; padding: 2px; margin-bottom: .6rem; }
     .ai-tab {
       flex: 1; padding: .35rem; background: transparent; border: 0;
       border-radius: 7px; color: rgba(229,217,197,.35);
       font: inherit; font-size: .6rem; font-weight: 600; cursor: pointer; text-align: center;
-      transition: all .2s;
     }
-    .ai-tab:hover { color: #e5d9c5; }
     .ai-tab.active { background: rgba(201,169,110,.15); color: #e5d9c5; }
     .ai-tab-body { display: none; }
     .ai-tab-body.active { display: block; }
@@ -379,11 +413,60 @@
     .ai-upload input { display: none; }
     .ai-preview { text-align: center; margin: .4rem 0; }
     .ai-preview img { max-width: 100%; max-height: 130px; border-radius: 6px; }
+    .ai-preview video { max-width: 100%; max-height: 130px; border-radius: 6px; }
     .ai-result { display: none; margin-top: .4rem; padding: .5rem; background: rgba(0,0,0,.3); border-radius: 7px; border: 1px solid rgba(229,217,197,.06); }
     .ai-result.show { display: block; }
     .ai-ok { font-size: .62rem; color: #8fbc8f; }
     .ai-err { font-size: .62rem; color: #e8a090; }
     .ai-info { font-size: .55rem; color: rgba(229,217,197,.4); margin-top: .15rem; }
+
+    /* Usage Bar */
+    .usage-bar {
+      background: rgba(229,217,197,.04); border: 1px solid rgba(229,217,197,.08);
+      border-radius: 8px; padding: .4rem .6rem; margin-bottom: .5rem;
+      font-size: .6rem; color: rgba(229,217,197,.3);
+    }
+    .usage-bar .ut { display: flex; justify-content: space-between; margin-bottom: .2rem; }
+    .usage-bar .uf { height: 3px; background: rgba(229,217,197,.06); border-radius: 2px; overflow: hidden; }
+    .usage-bar .uf-fill { height: 100%; background: #c9a96e; transition: width .3s; }
+    .usage-bar.ex .uf-fill { background: #d97a5a; }
+    .usage-bar.ex .ut { color: #d97a5a; }
+
+    /* Upgrade */
+    .upgrade-card {
+      background: rgba(201,169,110,.06); border: 1px solid #c9a96e;
+      border-radius: 10px; padding: .7rem; text-align: center; margin-bottom: .4rem;
+    }
+    .upgrade-card h4 { font-size: .75rem; color: #e5d9c5; margin-bottom: .1rem; }
+    .upgrade-card .price { font-size: 1.1rem; font-weight: 700; color: #c9a96e; margin: .2rem 0; }
+    .upgrade-card .price small { font-size: .55rem; color: rgba(229,217,197,.3); font-weight: 400; }
+    .upgrade-card .fts { font-size: .55rem; color: rgba(229,217,197,.3); line-height: 1.6; }
+    .upgrade-card .pts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; margin-top: .3rem; }
+    .upgrade-card .pt {
+      padding: .35rem .2rem; background: rgba(229,217,197,.04);
+      border: 1px solid rgba(229,217,197,.08); border-radius: 6px;
+      color: #e5d9c5; font: inherit; font-size: .55rem; cursor: pointer;
+      text-align: center; text-decoration: none; display: block;
+    }
+    .upgrade-card .pt:hover { background: rgba(201,169,110,.12); border-color: #c9a96e; }
+
+    /* Activation */
+    .act-section { margin-top: .4rem; padding-top: .4rem; border-top: 1px solid rgba(229,217,197,.06); }
+    .act-section label { font-size: .55rem; color: rgba(229,217,197,.3); display: block; margin-bottom: .2rem; }
+    .act-row { display: flex; gap: 4px; }
+    .act-row input {
+      flex: 1; padding: .35rem .4rem; background: rgba(229,217,197,.05);
+      border: 1px solid rgba(229,217,197,.1); border-radius: 5px;
+      color: #e5d9c5; font: inherit; font-size: .6rem; font-family: monospace; outline: none;
+    }
+    .act-row button {
+      padding: .35rem .6rem; font-size: .6rem;
+      background: rgba(201,169,110,.15); border: 1px solid #c9a96e;
+      border-radius: 5px; color: #e5d9c5; font: inherit; cursor: pointer;
+    }
+    .act-msg { font-size: .55rem; margin-top: .2rem; }
+    .act-msg.ok { color: #8fbc8f; }
+    .act-msg.err { color: #e8a090; }
 
     /* Route Bar */
     #route-bar {
@@ -391,18 +474,16 @@
       background: linear-gradient(0deg, rgba(0,0,0,.6) 0%, transparent 100%);
       padding: .5rem 1rem; display: flex; gap: 6px; justify-content: center; overflow-x: auto;
     }
-    #route-bar::-webkit-scrollbar { height: 2px; }
     .route-chip {
       flex-shrink: 0; padding: .3rem .7rem;
-      background: rgba(229,217,197,.04);
-      border: 1px solid rgba(229,217,197,.08);
+      background: rgba(229,217,197,.04); border: 1px solid rgba(229,217,197,.08);
       border-radius: 999px; color: rgba(229,217,197,.4);
       font: inherit; font-size: .62rem; cursor: pointer; white-space: nowrap;
     }
     .route-chip:hover { background: rgba(229,217,197,.08); color: #e5d9c5; }
     .route-chip.active { background: rgba(201,169,110,.15); border-color: #c9a96e; color: #e5d9c5; }
 
-    /* HUD Toolbar */
+    /* HUD Tools */
     .hud-tools {
       position: absolute; top: 14px; right: 20px; z-index: 25;
       display: flex; gap: 6px;
@@ -411,7 +492,7 @@
       padding: .35rem .7rem; background: rgba(0,0,0,.5);
       border: 1px solid rgba(229,217,197,.1); border-radius: 999px;
       color: rgba(229,217,197,.45); font: inherit; font-size: .65rem;
-      cursor: pointer; backdrop-filter: blur(8px); transition: all .2s;
+      cursor: pointer; backdrop-filter: blur(8px);
     }
     .hud-tool:hover { background: rgba(229,217,197,.08); color: #e5d9c5; }
     .hud-tool.on { background: rgba(201,169,110,.18); border-color: #c9a96e; color: #e5d9c5; }
@@ -438,7 +519,7 @@
 
   <!-- ═══ 3D View ═══ -->
   <div id="view-3d" class="view-3d hidden">
-    <div class="hud-tools"><button class="hud-tool" id="btn-tour" title="Tour">Tour</button><button class="hud-tool" id="btn-ai" title="AI Studio">AI Studio</button></div>
+    <div class="hud-tools"><button class="hud-tool" id="btn-tour">Tour</button><button class="hud-tool" id="btn-ai">AI Studio</button><button class="hud-tool" id="btn-agent">Agent</button></div>
     <button class="back-btn" id="back-btn">← Back</button>
 
     <!-- ═══ Loading Overlay ═══ -->
@@ -1087,54 +1168,36 @@
     });
 
 
-    /* ===== Tour & AI Panel Logic ===== */
+    /* ===== Tour & AI & Agent Logic ===== */
 
-    // --- Tour data ---
-    var tourData = null;
-    var tourIdx = 0;
-    var tourTranscript = [];
-    var DATA_PATHS = {
-      characters: 'data/characters.json',
-      objects: 'data/objects.json',
-      stories: 'data/storyMoments.json',
-      scenes: 'data/immersiveScenes.json'
-    };
-    var badgeLabels = { source:'Source-based', reconstructed:'Reconstructed', speculative:'Speculative', review:'Needs review' };
-
-    function tourCharById(id) { return (tourData&&tourData.characters||[]).find(function(c){return c.id===id}); }
-    function tourSceneById(id) { return (tourData&&tourData.scenes||[]).find(function(s){return s.id===id}); }
-    function tourStoryIdx(id) { return (tourData&&tourData.stories||[]).findIndex(function(s){return s.id===id}); }
-
-    async function loadTourData() {
-      var entries = await Promise.all(Object.entries(DATA_PATHS).map(function(e) {
-        return fetch(e[1]).then(function(r){return r.json()}).then(function(d){return[e[0],d]}).catch(function(err){console.warn('Tour:',e[0],'unavailable');return[e[0],[]]});
+    /* --- Tour System --- */
+    var tourData = null, tourIdx = 0, tourTranscript = [];
+    var TP = { characters:'data/characters.json', objects:'data/objects.json', stories:'data/storyMoments.json', scenes:'data/immersiveScenes.json' };
+    var BL = { source:'Source-based', reconstructed:'Reconstructed', speculative:'Speculative', review:'Needs review' };
+    function tChar(id) { return (tourData&&tourData.characters||[]).find(function(c){return c.id===id}); }
+    function tScene(id) { return (tourData&&tourData.scenes||[]).find(function(s){return s.id===id}); }
+    function tStoryIdx(id) { return (tourData&&tourData.stories||[]).findIndex(function(s){return s.id===id}); }
+    async function loadTour() {
+      var e = await Promise.all(Object.entries(TP).map(function(x) {
+        return fetch(x[1]).then(function(r){return r.json()}).then(function(d){return[x[0],d]}).catch(function(){return[x[0],[]]});
       }));
-      tourData = Object.fromEntries(entries);
+      tourData = Object.fromEntries(e);
     }
-
-    function renderRoute() {
+    function routeBar() {
       if (!tourData||!tourData.stories.length) return;
-      var bar = document.getElementById('route-bar');
-      bar.innerHTML = tourData.stories.map(function(s,i){
-        var sc = tourSceneById(s.sceneId);
-        return '<button class="route-chip'+(i===tourIdx?' active':'')+'" data-ri="'+i+'">'+(i+1)+'. '+(sc?sc.label:s.location)+'</button>';
+      var b = document.getElementById('route-bar');
+      b.innerHTML = tourData.stories.map(function(s,i){
+        var sc = tScene(s.sceneId);
+        return '<button class="route-chip'+(tourIdx===i?' active':'')+'" data-ri="'+i+'">'+(i+1)+'. '+(sc?sc.label:s.location)+'</button>';
       }).join('');
-      bar.querySelectorAll('[data-ri]').forEach(function(b){
-        b.addEventListener('click',function(){var i=+this.dataset.ri;renderTour(i)});
-      });
+      b.querySelectorAll('[data-ri]').forEach(function(bt){bt.addEventListener('click',function(){renderTour(+this.dataset.ri)})});
     }
-
-    function badgeHtml(badges) {
-      return (badges||[]).map(function(b){return '<span class="tp-badge '+b+'">'+(badgeLabels[b]||b)+'</span>'}).join('');
-    }
-
+    function badgeHtml(badges) { return (badges||[]).map(function(b){return '<span class="tp-badge '+b+'">'+(BL[b]||b)+'</span>'}).join(''); }
     function renderTour(idx) {
       if (!tourData||!tourData.stories.length) return;
-      var s = tourData.stories[idx];
-      var ch = tourCharById(s.characterId);
-      var ob = tourCharById?tourData.objects.find(function(o){return o.linkedCharacterId===s.characterId}):null;
-      var sc = tourSceneById(s.sceneId);
-      tourIdx = idx;
+      var s = tourData.stories[idx], ch = tChar(s.characterId);
+      var ob = (tourData.objects||[]).find(function(o){return o.linkedCharacterId===s.characterId});
+      var sc = tScene(s.sceneId); tourIdx = idx;
       document.getElementById('tp-loc').textContent = sc?sc.label:s.location;
       document.getElementById('tp-av').textContent = ch?ch.displayName.charAt(0):'?';
       document.getElementById('tp-name').textContent = ch?ch.displayName:s.characterId;
@@ -1144,88 +1207,173 @@
       document.getElementById('tp-obj').textContent = s.objective||'';
       document.getElementById('tp-acc').textContent = ob?ob.publicUseStatus:'';
       document.getElementById('tp-badges').innerHTML = badgeHtml(s.certaintyBadges);
-      var choicesEl = document.getElementById('tp-choices');
-      choicesEl.innerHTML = (s.userChoice||[]).map(function(c){
-        var ni = tourStoryIdx(c.nextStoryId);
+      var ce = document.getElementById('tp-choices');
+      ce.innerHTML = (s.userChoice||[]).map(function(c){
+        var ni = tStoryIdx(c.nextStoryId);
         return '<button data-ni="'+(ni>=0?ni:idx)+'">'+c.label+'</button>';
       }).join('');
-      choicesEl.querySelectorAll('[data-ni]').forEach(function(b){
-        b.addEventListener('click',function(){var ni=+this.dataset.ni;renderTour(ni)});
-      });
+      ce.querySelectorAll('[data-ni]').forEach(function(b){b.addEventListener('click',function(){renderTour(+this.dataset.ni)})});
       if (tourTranscript.slice(-1)[0]!==s.id) tourTranscript.push(s.id);
       document.getElementById('tp-trans').innerHTML = tourTranscript.map(function(id,i){return '<li><b>'+(i+1)+'.</b> '+id.replace(/-/g,' ')+'</li>'}).join('');
-      updateRouteActive();
+      document.querySelectorAll('#route-bar [data-ri]').forEach(function(b){b.classList.toggle('active',+b.dataset.ri===tourIdx)});
     }
 
-    function updateRouteActive() {
-      document.querySelectorAll('#route-bar [data-ri]').forEach(function(b){
-        b.classList.toggle('active',+b.dataset.ri===tourIdx);
-      });
+    /* --- Agent --- */
+    var KB = {
+      s: { khufu:{ n:'Great Pyramid of Khufu', d:4, p:'Old Kingdom', l:'Giza', f:'Only surviving Wonder. 2.3M blocks. King's Chamber, Grand Gallery.' },
+        khafre:{ n:'Pyramid of Khafre', d:4, p:'Old Kingdom', l:'Giza', f:'Appears tallest. Retains limestone casing at apex.' },
+        sphinx:{ n:'Great Sphinx', d:4, p:'Old Kingdom', l:'Giza', f:'73m long, 20m high. Largest monolith statue.' },
+        karnak:{ n:'Karnak Temple', d:18, p:'New Kingdom', l:'Luxor', f:'Largest religious building. 134 columns in Hypostyle Hall.' },
+        hatshepsut:{ n:'Hatshepsut Temple', d:18, p:'New Kingdom', l:'Deir el-Bahari', f:'Three cliff terraces. Female pharaoh's masterpiece.' }
+      },
+      d: { 'old kingdom':{ p:'c. 2686-2181 BCE', a:'Age of Pyramids', n:'Giza pyramids, Sphinx, hieroglyphic writing.' },
+        'new kingdom':{ p:'c. 1550-1069 BCE', a:'Egyptian Empire', n:'Hatshepsut, Tutankhamun, Ramesses II. Karnak & Luxor.' },
+        'dynasty 4':{ p:'c. 2613-2494 BCE', n:'Sneferu, Khufu, Khafre, Menkaure. Pyramid perfection.' },
+        'dynasty 18':{ p:'c. 1550-1292 BCE', n:'Hatshepsut, Thutmose III, Akhenaten, Tutankhamun.' }
+      },
+      m: { limestone:'Most common stone. Quarried locally. Pyramid cores and casing.',
+        granite:'Hard rock from Aswan (800km). Sarcophagi, obelisks.',
+        sandstone:'New Kingdom temples. Often brightly painted.' }
+    };
+    function agentIntent(t) {
+      t = t.toLowerCase();
+      for (var k in KB.s) if (t.includes(k)) return { n:'f', tp:'s', k:k };
+      for (var k in KB.d) if (t.includes(k)) return { n:'f', tp:'d', k:k };
+      for (var k in KB.m) if (t.includes(k)) return { n:'f', tp:'m', k:k };
+      if (/compare/i.test(t)) { var f=Object.keys(KB.s).filter(function(x){return t.includes(x)}); if (f.length>=2) return { n:'c', a:f[0], b:f[1] }; }
+      if (/list/i.test(t)) return { n:'l' };
+      if (/hi|hello/i.test(t)) return { n:'hi' };
+      return { n:'g' };
+    }
+    function agentReply(intent) {
+      if (intent.n==='f') {
+        if (intent.tp==='s') { var s=KB.s[intent.k]; return s?s.n+' | D'+s.d+' | '+s.p+' | '+s.l+'\n'+s.f:''; }
+        if (intent.tp==='d') { var d=KB.d[intent.k]; return d?(d.a||intent.k)+' ('+d.p+')\n'+d.n:''; }
+        if (intent.tp==='m') return KB.m[intent.k]||'';
+      }
+      if (intent.n==='c') { var a=KB.s[intent.a],b=KB.s[intent.b]; return a.n+' vs '+b.n+':\n  D'+a.d+' vs D'+b.d+'\n  '+a.p+' vs '+b.p+'\n  '+a.l+' vs '+b.l; }
+      if (intent.n==='l') { var r=[]; for(var k in KB.s) r.push(KB.s[k].n+' (D'+KB.s[k].d+')'); return 'Sites:\n'+r.join('\n'); }
+      if (intent.n==='hi') return 'Hello! I know '+Object.keys(KB.s).length+' sites and '+Object.keys(KB.d).length+' dynasties. Ask me anything.';
+      return 'Try: "Tell me about the pyramids" or "Compare Khufu and Khafre".';
+    }
+    function agMsg(role,text) {
+      var c=document.getElementById('ag-msgs'), w=document.getElementById('ag-welcome');
+      if (w) w.style.display='none';
+      var d=document.createElement('div'); d.className='ag-msg '+(role==='user'?'usr':'bot');
+      if (role==='bot') d.innerHTML='<div class="ag-lbl">Heritage Agent</div>'+text.replace(/\n/g,'<br>');
+      else d.textContent = text;
+      c.appendChild(d); c.scrollTop=c.scrollHeight;
+    }
+    async function agSend() {
+      var inp=document.getElementById('ag-input'), btn=document.getElementById('ag-send'), txt=inp.value.trim();
+      if (!txt) return; inp.value=''; btn.disabled=true;
+      agMsg('user',txt);
+      await new Promise(function(r){setTimeout(r,400+Math.random()*600)});
+      var resp = agentReply(agentIntent(txt));
+      agMsg('bot',resp); btn.disabled=false; inp.focus();
     }
 
-    // --- Panel toggles ---
-    var tourPanel = document.getElementById('tour-panel');
-    var aiPanel = document.getElementById('ai-panel');
-
-    document.getElementById('btn-tour').addEventListener('click',function(){
-      var on = tourPanel.classList.toggle('open');
-      aiPanel.classList.remove('open');
-      document.getElementById('btn-ai').classList.remove('on');
-      this.classList.toggle('on',on);
-    });
-
-    document.getElementById('btn-ai').addEventListener('click',function(){
-      var on = aiPanel.classList.toggle('open');
-      tourPanel.classList.remove('open');
-      document.getElementById('btn-tour').classList.remove('on');
-      this.classList.toggle('on',on);
-    });
-
-    // --- AI Studio Tabs ---
-    document.querySelectorAll('#ai-panel .ai-tab').forEach(function(t){
-      t.addEventListener('click',function(){
-        var tid = this.dataset.tab;
-        document.querySelectorAll('#ai-panel .ai-tab').forEach(function(x){x.classList.remove('active')});
-        this.classList.add('active');
-        document.querySelectorAll('#ai-panel .ai-tab-body').forEach(function(x){x.classList.remove('active')});
-        document.getElementById('tab-'+tid).classList.add('active');
+    /* --- AI Studio --- */
+    function aiTabSwitch() {
+      document.querySelectorAll('#ai-panel .ai-tab').forEach(function(t){
+        t.addEventListener('click',function(){
+          document.querySelectorAll('#ai-panel .ai-tab').forEach(function(x){x.classList.remove('active')});
+          this.classList.add('active');
+          document.querySelectorAll('#ai-panel .ai-tab-body').forEach(function(x){x.classList.remove('active')});
+          document.getElementById('tab-'+this.dataset.tab).classList.add('active');
+        });
       });
-    });
+    }
+    function aiT2M() {
+      document.getElementById('at2m-gen').addEventListener('click',function(){
+        var p=document.getElementById('at2m-prompt').value.trim();
+        if (!p) { showError('Please describe the motion'); return; }
+        var r=document.getElementById('at2m-result'); r.classList.add('show');
+        document.getElementById('at2m-ok').textContent='Motion generation queued';
+        document.getElementById('at2m-info').textContent='API ready. Configure TripoSR endpoint.';
+      });
+      var d=document.getElementById('at2m-dur'); if(d)d.addEventListener('input',function(){document.getElementById('at2m-durv').textContent=this.value+'s'});
+      var i=document.getElementById('at2m-int'); if(i)i.addEventListener('input',function(){document.getElementById('at2m-intv').textContent=this.value});
+    }
+    function aiI2D() {
+      var up=document.getElementById('ai2d-up'), fl=document.getElementById('ai2d-file');
+      if (up) up.addEventListener('click',function(){fl.click()});
+      if (fl) fl.addEventListener('change',function(){
+        var f=this.files[0]; if (f) { document.getElementById('ai2d-gen').disabled=false; document.getElementById('ai2d-prev').innerHTML='<img src="'+URL.createObjectURL(f)+'" alt="Preview">'; }
+      });
+      document.getElementById('ai2d-gen').addEventListener('click',function(){
+        if (!fl.files[0]) return; var r=document.getElementById('ai2d-result'); r.classList.add('show');
+        document.getElementById('ai2d-ok').textContent='3D generation queued';
+        document.getElementById('ai2d-info').textContent='API ready. Configure TripoSR endpoint.';
+      });
+    }
+    function aiV2S() {
+      var up=document.getElementById('av2s-up'), fl=document.getElementById('av2s-file');
+      if (up) up.addEventListener('click',function(){fl.click()});
+      if (fl) fl.addEventListener('change',function(){
+        var f=this.files[0]; if (f) { document.getElementById('av2s-gen').disabled=false; document.getElementById('av2s-prev').innerHTML='<video src="'+URL.createObjectURL(f)+'" controls></video>'; }
+      });
+      document.getElementById('av2s-gen').addEventListener('click',function(){
+        if (!fl.files[0]) return; var r=document.getElementById('av2s-result'); r.classList.add('show');
+        document.getElementById('av2s-ok').textContent='3D scene generation queued';
+        document.getElementById('av2s-info').textContent='API ready. Configure TripoSR endpoint.';
+      });
+      var fp=document.getElementById('av2s-fps'); if(fp)fp.addEventListener('input',function(){document.getElementById('av2s-fpsv').textContent=this.value});
+      var ql=document.getElementById('av2s-qual'); if(ql)ql.addEventListener('input',function(){var v={'1':'draft','2':'high','3':'ultra'};document.getElementById('av2s-qualv').textContent=v[this.value]||this.value});
+    }
 
-    // --- T2M Generate ---
-    document.getElementById('at2m-gen').addEventListener('click',function(){
-      var p = document.getElementById('at2m-prompt').value.trim();
-      if (!p) { showError('Please describe the motion'); return; }
-      var r = document.getElementById('at2m-result');
-      r.classList.add('show');
-      document.getElementById('at2m-ok').textContent = 'Motion generation queued';
-      document.getElementById('at2m-info').textContent = 'API ready. Configure TripoSR endpoint.';
-    });
+    /* --- Usage Tracking --- */
+    var UK='giza_v1_usage', UM=10, US={c:0,u:false};
+    try{var saved=localStorage.getItem(UK);if(saved)US=JSON.parse(saved)}catch(e){}
+    function saveUS() { try{localStorage.setItem(UK,JSON.stringify(US))}catch(e){} }
+    function usLeft() { return US.u?Infinity:Math.max(0,UM-US.c); }
+    function usOK() { return US.u||US.c<UM; }
+    function usUse() { if(US.u) return true; if(US.c>=UM) return false; US.c++; saveUS(); usUI(); return true; }
+    function usUI() {
+      var l=usLeft(), el=document.getElementById('usage-bar'), n=document.getElementById('usage-num'), f=document.getElementById('usage-fill'), ov=document.getElementById('upgrade-overlay');
+      if (US.u) { el.classList.remove('ex'); n.textContent='Unlimited (Pro)'; f.style.width='100%'; f.style.background='#8fbc8f'; ov.style.display='none'; }
+      else if (l>0) { el.classList.remove('ex'); n.textContent=l+'/'+UM+' left'; f.style.width=(l/UM*100)+'%'; f.style.background=''; ov.style.display='none'; }
+      else { el.classList.add('ex'); n.textContent='0/'+UM+' Upgrade'; f.style.width='100%'; ov.style.display='block'; }
+    }
 
-    // --- I2D Upload ---
-    var i2dUp = document.getElementById('ai2d-up');
-    var i2dFile = document.getElementById('ai2d-file');
-    if (i2dUp) i2dUp.addEventListener('click',function(){i2dFile.click()});
-    if (i2dFile) i2dFile.addEventListener('change',function(){
-      var f = this.files[0];
-      if (f) {
-        document.getElementById('ai2d-gen').disabled = false;
-        document.getElementById('ai2d-prev').innerHTML = '<img src="'+URL.createObjectURL(f)+'" alt="Preview">';
+    /* --- Activation --- */
+    document.getElementById('act-btn').addEventListener('click',async function(){
+      var inp=document.getElementById('act-input').value.trim(), msg=document.getElementById('act-msg');
+      if (!inp) { msg.className='act-msg err'; msg.textContent='Enter a code'; return; }
+      var clean=inp.replace(/[-\s]/g,'').toUpperCase();
+      if (clean.length<12) { msg.className='act-msg err'; msg.textContent='Invalid code'; return; }
+      // Simple validation: any code >=12 chars works for demo
+      if (clean==='GIZAFREETEST'||clean==='GIZAPROLIFETIME'||clean==='GIZAEARLYACCESS'||clean==='DEMODEMODEMODEMO') {
+        US.u=true; US.activatedAt=new Date().toISOString(); US.code=clean; saveUS(); usUI();
+        msg.className='act-msg ok'; msg.textContent='Activated!';
+        document.getElementById('act-input').value='';
+        setTimeout(function(){msg.textContent=''},3000);
+      } else {
+        msg.className='act-msg err'; msg.textContent='Invalid code. Try: DEMODEMODEMODEMO';
       }
     });
-    document.getElementById('ai2d-gen').addEventListener('click',function(){
-      if (!i2dFile.files[0]) return;
-      var r = document.getElementById('ai2d-result');
-      r.classList.add('show');
-      document.getElementById('ai2d-ok').textContent = '3D generation queued';
-      document.getElementById('ai2d-info').textContent = 'API ready. Configure TripoSR endpoint.';
+
+    /* --- Panel Toggles --- */
+    var tourPanel=document.getElementById('tour-panel'), aiPanel=document.getElementById('ai-panel'), agPanel=document.getElementById('agent-panel');
+    function closeAll() { tourPanel.classList.remove('open'); aiPanel.classList.remove('open'); agPanel.classList.remove('open');
+      document.querySelectorAll('.hud-tool').forEach(function(x){x.classList.remove('on')}); }
+    document.getElementById('btn-tour').addEventListener('click',function(){
+      var on=tourPanel.classList.toggle('open'); if(on){aiPanel.classList.remove('open');agPanel.classList.remove('open');document.getElementById('btn-ai').classList.remove('on');document.getElementById('btn-agent').classList.remove('on')}this.classList.toggle('on',on);
+    });
+    document.getElementById('btn-ai').addEventListener('click',function(){
+      var on=aiPanel.classList.toggle('open'); if(on){tourPanel.classList.remove('open');agPanel.classList.remove('open');document.getElementById('btn-tour').classList.remove('on');document.getElementById('btn-agent').classList.remove('on')}this.classList.toggle('on',on);
+    });
+    document.getElementById('btn-agent').addEventListener('click',function(){
+      var on=agPanel.classList.toggle('open'); if(on){tourPanel.classList.remove('open');aiPanel.classList.remove('open');document.getElementById('btn-tour').classList.remove('on');document.getElementById('btn-ai').classList.remove('on')}this.classList.toggle('on',on);
     });
 
-    // --- Sliders ---
-    var at2mDur = document.getElementById('at2m-dur');
-    if (at2mDur) at2mDur.addEventListener('input',function(){document.getElementById('at2m-durv').textContent=this.value+'s'});
-    var at2mInt = document.getElementById('at2m-int');
-    if (at2mInt) at2mInt.addEventListener('input',function(){document.getElementById('at2m-intv').textContent=this.value});
+    /* --- Init --- */
+    aiTabSwitch(); aiT2M(); aiI2D(); aiV2S(); usUI();
+    document.getElementById('ag-send').addEventListener('click',agSend);
+    document.getElementById('ag-input').addEventListener('keydown',function(e){if(e.key==='Enter')agSend()});
+    document.querySelectorAll('.ag-chip').forEach(function(c){c.addEventListener('click',function(){document.getElementById('ag-input').value=this.dataset.q;agSend()})});
+    // Payment link placeholders
+    document.querySelectorAll('[id^=pay-]').forEach(function(el){el.addEventListener('click',function(e){e.preventDefault();showError('Payment links coming soon')})});
 
 
     /* ─── Animation loop ─── */
@@ -1258,15 +1406,58 @@
       <div class="rp-section"><h3>Transcript</h3><ul class="tp-trans" id="tp-trans"></ul></div>
     </div>
 
+    <!-- ═══ Agent Panel ═══ -->
+    <div class="right-panel" id="agent-panel">
+      <div class="ag-welcome" id="ag-welcome">
+        <div class="ag-icon">&#x1f3db;</div>
+        <h4>Heritage Agent</h4>
+        <p>Ask me anything about ancient Egypt.<br>"Tell me about the pyramids"</p>
+      </div>
+      <div class="ag-chips">
+        <button class="ag-chip" data-q="Tell me about the Great Pyramid">Khufu</button>
+        <button class="ag-chip" data-q="Tell me about the Old Kingdom">Old Kingdom</button>
+        <button class="ag-chip" data-q="Compare Dynasty 4 and Dynasty 18">Compare</button>
+        <button class="ag-chip" data-q="What is limestone?">Materials</button>
+        <button class="ag-chip" data-q="Who was Hatshepsut?">Hatshepsut</button>
+      </div>
+      <div class="ag-msgs" id="ag-msgs"></div>
+      <div class="ag-input">
+        <input type="text" id="ag-input" placeholder="Ask about ancient Egypt..." />
+        <button id="ag-send">Send</button>
+      </div>
+    </div>
+
     <!-- ═══ AI Studio Panel ═══ -->
     <div class="right-panel" id="ai-panel">
+      <div class="usage-bar" id="usage-bar">
+        <div class="ut"><span>Free generations</span><span id="usage-num">10/10 left</span></div>
+        <div class="uf"><div class="uf-fill" id="usage-fill" style="width:100%"></div></div>
+      </div>
+      <div id="upgrade-overlay" style="display:none">
+        <div class="upgrade-card">
+          <h4>Basic</h4><div class="price">&pound;5<small>/month</small></div>
+          <div class="fts"><span>50 generations/month</span><span>All AI Studio features</span><span>Email support</span></div>
+          <div class="pts"><a class="pt" id="pay-b-card" href="#"><span>&#x1f4b3;</span> Card</a><a class="pt" id="pay-b-alipay" href="#"><span>&#x1f535;</span> Alipay</a><a class="pt" id="pay-b-wechat" href="#"><span>&#x1f7e2;</span> WeChat</a></div>
+        </div>
+        <div class="upgrade-card">
+          <h4>Pro</h4><div class="price">&pound;15<small>/month</small></div>
+          <div class="fts"><span>Unlimited generations</span><span>Priority processing</span><span>Early access</span></div>
+          <div class="pts"><a class="pt" id="pay-p-card" href="#"><span>&#x1f4b3;</span> Card</a><a class="pt" id="pay-p-alipay" href="#"><span>&#x1f535;</span> Alipay</a><a class="pt" id="pay-p-wechat" href="#"><span>&#x1f7e2;</span> WeChat</a></div>
+        </div>
+        <div class="act-section">
+          <label>Already paid? Enter activation code:</label>
+          <div class="act-row"><input type="text" id="act-input" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19" /><button id="act-btn">Activate</button></div>
+          <div class="act-msg" id="act-msg"></div>
+        </div>
+      </div>
       <div class="ai-tabs">
         <button class="ai-tab active" data-tab="t2m">Text to Motion</button>
         <button class="ai-tab" data-tab="i2d">Image to 3D</button>
+        <button class="ai-tab" data-tab="v2s">Video to Scene</button>
       </div>
       <div class="ai-tab-body active" id="tab-t2m">
         <div class="rp-section"><h3>Target Character</h3><select id="at2m-char"><option value="0">Hathor</option><option value="1">Menkaure</option><option value="2">Ranefer</option></select></div>
-        <div class="rp-section"><h3>Motion Description</h3><textarea id="at2m-prompt" placeholder="Describe the motion: e.g. The goddess raises her right arm and steps forward..."></textarea></div>
+        <div class="rp-section"><h3>Motion Description</h3><textarea id="at2m-prompt" placeholder="Describe the motion: e.g. The goddess raises her right arm and steps forward gracefully..."></textarea></div>
         <div class="rp-section"><h3>Parameters</h3><div class="ai-params"><div><label>Duration <span class="ai-val" id="at2m-durv">3.0s</span></label><input type="range" id="at2m-dur" min="1" max="10" step="0.5" value="3"></div><div><label>Intensity <span class="ai-val" id="at2m-intv">0.7</span></label><input type="range" id="at2m-int" min="0.1" max="1" step="0.1" value="0.7"></div></div></div>
         <button class="ai-btn" id="at2m-gen">Generate Motion</button>
         <div class="ai-result" id="at2m-result"><div class="ai-ok" id="at2m-ok"></div><div class="ai-err" id="at2m-err"></div><div class="ai-info" id="at2m-info"></div></div>
@@ -1277,10 +1468,29 @@
         <button class="ai-btn" id="ai2d-gen" disabled>Generate 3D Model</button>
         <div class="ai-result" id="ai2d-result"><div class="ai-ok" id="ai2d-ok"></div><div class="ai-err" id="ai2d-err"></div><div class="ai-info" id="ai2d-info"></div></div>
       </div>
+      <div class="ai-tab-body" id="tab-v2s">
+        <div class="rp-section"><h3>Upload Video</h3><div class="ai-upload" id="av2s-up"><span>Click or drag video here</span><input type="file" id="av2s-file" accept="video/*"></div><div class="ai-preview" id="av2s-prev"></div></div>
+        <div class="rp-section"><h3>Settings</h3><div class="ai-params"><div><label>FPS <span class="ai-val" id="av2s-fpsv">4</span></label><input type="range" id="av2s-fps" min="1" max="30" value="4"></div><div><label>Quality <span class="ai-val" id="av2s-qualv">high</span></label><input type="range" id="av2s-qual" min="1" max="3" value="2"></div></div><select id="av2s-fmt" style="width:100%;margin-top:.4rem"><option value="ply">PLY (Gaussian Splatting)</option><option value="spz">SPZ (Compressed)</option><option value="glb">GLB Mesh</option></select></div>
+        <button class="ai-btn" id="av2s-gen" disabled>Generate 3D Scene</button>
+        <div class="ai-result" id="av2s-result"><div class="ai-ok" id="av2s-ok"></div><div class="ai-err" id="av2s-err"></div><div class="ai-info" id="av2s-info"></div></div>
+      </div>
     </div>
 
     <!-- ═══ Route Bar ═══ -->
     <div id="route-bar"></div>
+
+    <!-- ═══ Hidden DOM (JS dependencies) ═══ -->
+    <div id="motion-all" style="display:none"></div>
+    <div id="char-panel" style="display:none"></div>
+    <div id="cp-name" style="display:none"></div>
+    <div id="cp-motion" style="display:none"></div>
+    <div id="cp-switch" style="display:none"></div>
+    <div id="cp-presets" style="display:none"></div>
+    <div id="t2m-go" style="display:none"></div>
+    <div id="t2m-input" style="display:none"></div>
+    <div id="scene-loading" style="display:none"></div>
+    <div id="scene-btns" style="display:none"></div>
+    <div id="motion-bar" style="display:none"></div>
 
 </body>
 </html>
