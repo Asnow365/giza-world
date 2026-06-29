@@ -6,6 +6,7 @@
   <title>Giza World v2 - AI 3D Exhibition</title>
 
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
@@ -467,7 +468,47 @@
       .route-chip { padding: .3rem .6rem; font-size: .6rem; }
       .hud-toolbar { top: 10px; right: 8px; gap: 4px; }
       .hud-tool-btn { padding: .35rem .6rem; font-size: .62rem; }
+      #user-area { padding: .35rem; }
+      #user-area .user-name { display: none; }
     }
+
+    /* ═══ Google Login ═══ */
+    #login-container {
+      position: absolute; top: 16px; right: 20px; z-index: 55;
+    }
+    #login-btn {
+      display: flex; align-items: center; gap: 10px;
+      padding: .55rem 1.2rem;
+      background: #fff; border: 1px solid #dadce0;
+      border-radius: 8px; color: #3c4043;
+      font-family: 'Inter', 'Noto Serif SC', sans-serif;
+      font-size: .8rem; font-weight: 500; letter-spacing: .02em;
+      cursor: pointer; transition: all .25s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    }
+    #login-btn:hover { box-shadow: 0 2px 8px rgba(0,0,0,.15); background: #fafafa; }
+    #login-btn .g-icon { width: 20px; height: 20px; flex-shrink: 0; }
+
+    /* User profile in HUD */
+    #user-area {
+      display: none; align-items: center; gap: 10px;
+      padding: .4rem .8rem;
+      background: rgba(0,0,0,.4); border: 1px solid var(--hud-border);
+      border-radius: 999px; backdrop-filter: blur(8px);
+    }
+    #user-area.logged-in { display: flex; }
+    #user-area .user-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2px solid var(--hud-accent); flex-shrink: 0;
+    }
+    #user-area .user-name {
+      font-size: .7rem; color: var(--hud-text); letter-spacing: .03em;
+    }
+    #user-area .user-logout {
+      font-size: .6rem; color: var(--hud-muted); cursor: pointer;
+      background: none; border: none; padding: 2px 6px;
+    }
+    #user-area .user-logout:hover { color: #e8a090; }
   </style>
 </head>
 <body>
@@ -476,6 +517,15 @@
   <div id="home-view">
     <h1>Giza World</h1>
     <div class="subtitle">AI 3D Exhibition · Guided Tour</div>
+
+    <!-- Google Login -->
+    <div id="login-container">
+      <button id="login-btn" onclick="document.querySelector('#g_id_signin_target div[role=button]').click()">
+        <svg class="g-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google
+      </button>
+      <div id="g_id_signin_target" style="display:none"></div>
+    </div>
     <div class="home-section">
       <h2>Guided Tour</h2>
       <div class="home-grid" id="tour-cards"></div>
@@ -516,6 +566,11 @@
       <div class="hud-toolbar">
         <button class="hud-tool-btn" id="btn-tour" title="Guided Tour">🧭 Tour</button>
         <button class="hud-tool-btn" id="btn-ai" title="AI Studio">🤖 AI Studio</button>
+        <div id="user-area">
+          <img class="user-avatar" id="user-avatar" src="" alt="" />
+          <span class="user-name" id="user-name"></span>
+          <button class="user-logout" id="user-logout" title="Sign out">✕</button>
+        </div>
       </div>
 
       <div class="scene-btns" id="scene-btns">
@@ -723,6 +778,161 @@
       </div>
     </div>
   </div>
+
+  <!-- ═══ Google Sign-In Handler (global scope, required by GIS) ═══ -->
+  <script>
+    // ═══════════════════════════════════════
+    // Google Identity Services Auth
+    // ═══════════════════════════════════════
+
+    const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+
+    // Auth state — shared with main module via window
+    window._gizaAuth = {
+      isLoggedIn: false,
+      user: null,
+      credential: null,
+    };
+
+    // Restore session from localStorage
+    (function restoreSession() {
+      try {
+        const saved = localStorage.getItem('giza_google_user');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.email && parsed.name) {
+            window._gizaAuth.isLoggedIn = true;
+            window._gizaAuth.user = parsed;
+            console.log('[Auth] Session restored:', parsed.email);
+          }
+        }
+      } catch (e) { /* ignore */ }
+    })();
+
+    // GIS callback — called after successful Google sign-in
+    function onGoogleSignIn(response) {
+      try {
+        const payload = parseJWT(response.credential);
+        console.log('[Auth] Google Sign-In success:', payload.email);
+
+        const user = {
+          email: payload.email,
+          name: payload.name,
+          picture: payload.picture,
+          given_name: payload.given_name,
+          family_name: payload.family_name,
+        };
+
+        window._gizaAuth.isLoggedIn = true;
+        window._gizaAuth.user = user;
+        window._gizaAuth.credential = response.credential;
+
+        // Persist session
+        localStorage.setItem('giza_google_user', JSON.stringify(user));
+
+        // Update UI
+        updateAuthUI();
+
+        // Notify main module
+        window.dispatchEvent(new CustomEvent('giza-auth-change', {
+          detail: { loggedIn: true, user }
+        }));
+      } catch (e) {
+        console.error('[Auth] Sign-in error:', e);
+      }
+    }
+
+    // Decode JWT payload (Google credential is a JWT)
+    function parseJWT(token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+      );
+      return JSON.parse(jsonPayload);
+    }
+
+    // Update UI based on login state
+    function updateAuthUI() {
+      const auth = window._gizaAuth;
+      const loginBtn = document.getElementById('login-btn');
+      const userArea = document.getElementById('user-area');
+
+      if (auth.isLoggedIn && auth.user) {
+        // Hide login button on home page
+        if (loginBtn) loginBtn.style.display = 'none';
+        // Show user in HUD
+        if (userArea) {
+          userArea.classList.add('logged-in');
+          document.getElementById('user-avatar').src = auth.user.picture || '';
+          document.getElementById('user-name').textContent = auth.user.given_name || auth.user.name;
+        }
+      } else {
+        if (loginBtn) loginBtn.style.display = '';
+        if (userArea) userArea.classList.remove('logged-in');
+      }
+    }
+
+    // Logout
+    function googleLogout() {
+      window._gizaAuth.isLoggedIn = false;
+      window._gizaAuth.user = null;
+      window._gizaAuth.credential = null;
+      localStorage.removeItem('giza_google_user');
+
+      // Also revoke Google session if google.accounts is available
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.disableAutoSelect();
+      }
+
+      updateAuthUI();
+      window.dispatchEvent(new CustomEvent('giza-auth-change', {
+        detail: { loggedIn: false, user: null }
+      }));
+      console.log('[Auth] Logged out');
+    }
+
+    // Initialize: run when GIS library is ready
+    function initGoogleAuth() {
+      if (!window.google?.accounts?.id) {
+        // GIS not loaded yet, retry
+        setTimeout(initGoogleAuth, 200);
+        return;
+      }
+
+      const google = window.google.accounts.id;
+
+      google.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: onGoogleSignIn,
+        auto_select: false,
+        ux_mode: 'popup',
+        itp_support: true,
+      });
+
+      // Also render as a hidden button (our custom button triggers it)
+      google.renderButton(
+        document.getElementById('g_id_signin_target'),
+        { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', logo_alignment: 'left' }
+      );
+
+      console.log('[Auth] Google Identity Services initialized');
+    }
+
+    // Kick off initialization
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        initGoogleAuth();
+        // Wire logout button
+        document.getElementById('user-logout')?.addEventListener('click', googleLogout);
+        updateAuthUI();
+      });
+    } else {
+      initGoogleAuth();
+      document.getElementById('user-logout')?.addEventListener('click', googleLogout);
+      updateAuthUI();
+    }
+  </script>
 
   <!-- ═══ Import Map ═══ -->
   <script type="importmap">
@@ -966,6 +1176,33 @@
 
       getPendingCount() { return this._pending; },
     };
+
+    /* ═══════════════════════════════════════════
+       PART 2.5: AUTH INTEGRATION (Google Sign-In)
+       ═══════════════════════════════════════════ */
+
+    // Listen for auth state changes from Google Sign-In
+    window.addEventListener('giza-auth-change', (e) => {
+      const { loggedIn, user } = e.detail;
+      if (loggedIn && user) {
+        console.log('[Module] User authenticated:', user.email);
+        // Wire credential into TripoAPI
+        TripoAPI.apiKey = window._gizaAuth?.credential || '';
+        TripoAPI.userEmail = user.email;
+        showError(`Signed in as ${user.email}`);
+      } else {
+        console.log('[Module] User signed out');
+        TripoAPI.apiKey = '';
+        TripoAPI.userEmail = '';
+      }
+    });
+
+    // If session was restored from localStorage, apply it
+    if (window._gizaAuth?.isLoggedIn && window._gizaAuth?.credential) {
+      TripoAPI.apiKey = window._gizaAuth.credential;
+      TripoAPI.userEmail = window._gizaAuth.user?.email || '';
+      console.log('[Module] Session restored for:', TripoAPI.userEmail);
+    }
 
     /* ═══════════════════════════════════════════
        PART 3: AI STUDIO PANEL LOGIC
