@@ -1397,15 +1397,19 @@
         charPanel.classList.remove('hidden');
         loadCharacterView(idx);
       } else if (type === 'tour') {
+        if (!tourState.data) {
+          showError('Tour data not loaded. Please wait or try refreshing.');
+          return;
+        }
         hudEl.style.display = '';
         charPanel.classList.add('hidden');
         tourPanel.classList.add('open');
         aiPanel.classList.remove('open');
         document.getElementById('btn-tour').classList.add('active');
-        const targetScene = tourState.activeIndex !== undefined
+        const idx = (tourState.activeIndex !== undefined && tourState.data?.stories?.length)
           ? mapStoryToSceneIdx(tourState.data.stories[tourState.activeIndex]) : 0;
-        if (!loadedScenes.has(targetScene)) loadSceneView(targetScene);
-        else if (targetScene !== currentSceneIdx) switchScene(targetScene);
+        if (!loadedScenes.has(idx)) loadSceneView(idx);
+        else if (idx !== currentSceneIdx) switchScene(idx);
       } else if (type === 'ai') {
         hudEl.style.display = '';
         charPanel.classList.add('hidden');
