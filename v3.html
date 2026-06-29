@@ -717,6 +717,10 @@
       <div class="home-grid" id="ai-cards"></div>
     </div>
     <div class="home-section">
+      <h2>Account</h2>
+      <div class="home-grid" id="login-card-spot"></div>
+    </div>
+    <div class="home-section">
       <h2>Scenes</h2>
       <div class="home-grid" id="scene-cards"></div>
     </div>
@@ -1925,7 +1929,6 @@ Keep responses concise (2-4 sentences) and helpful. Suggest next actions.`;
       const { loggedIn, user } = e.detail;
       if (loggedIn && user) {
         console.log('[Module] User authenticated:', user.email);
-        // Wire credential into TripoAPI
         TripoAPI.apiKey = window._gizaAuth?.credential || '';
         TripoAPI.userEmail = user.email;
         showError(`Signed in as ${user.email}`);
@@ -1934,7 +1937,11 @@ Keep responses concise (2-4 sentences) and helpful. Suggest next actions.`;
         TripoAPI.apiKey = '';
         TripoAPI.userEmail = '';
       }
+      updateLoginCard();
     });
+
+    // Initial login card state
+    updateLoginCard();
 
     // If session was restored from localStorage, apply it
     if (window._gizaAuth?.isLoggedIn && window._gizaAuth?.credential) {
@@ -2533,7 +2540,24 @@ Keep responses concise (2-4 sentences) and helpful. Suggest next actions.`;
       { section: 'char-cards', type: 'character', idx: 2, icon: '🕺', name: 'Ranefer', desc: '5 animations' },
       { section: 'tour-cards', type: 'tour', idx: 0, icon: '🧭', name: 'Guided Tour', desc: '3-stop museum journey' },
       { section: 'ai-cards', type: 'ai', idx: 0, icon: '🤖', name: 'AI Studio', desc: 'Text→Motion · Image→3D · Video→Scene' },
+      { section: 'login-card-spot', type: 'login', idx: 0, icon: '🔑', name: 'Sign In', desc: 'Unlock unlimited AI generations' },
     ];
+
+    // Update login card based on auth state
+    function updateLoginCard() {
+      const spot = document.getElementById('login-card-spot');
+      if (!spot) return;
+      const auth = window._gizaAuth;
+      if (auth?.isLoggedIn && auth?.user) {
+        spot.querySelector('.icon').textContent = '👤';
+        spot.querySelector('.name').textContent = auth.user.given_name || auth.user.name;
+        spot.querySelector('.desc').textContent = 'Signed in · Click to sign out';
+      } else {
+        spot.querySelector('.icon').textContent = '🔑';
+        spot.querySelector('.name').textContent = 'Sign In';
+        spot.querySelector('.desc').textContent = 'Unlock unlimited AI generations';
+      }
+    }
 
     function generateCards() {
       NAV_CARDS.forEach(c => {
@@ -2602,6 +2626,16 @@ Keep responses concise (2-4 sentences) and helpful. Suggest next actions.`;
         const targetScene = 0;
         if (!loadedScenes.has(targetScene)) loadSceneView(targetScene);
         else if (targetScene !== currentSceneIdx) switchScene(targetScene);
+      } else if (type === 'login') {
+        // Trigger Google Sign-In via hidden button
+        const auth = window._gizaAuth;
+        if (auth?.isLoggedIn) {
+          googleLogout();
+          updateLoginCard();
+        } else {
+          const target = document.querySelector('#g_id_signin_target div[role=button]');
+          if (target) target.click();
+        }
       }
     }
 
