@@ -15,7 +15,7 @@
 
     :root {
       --hud-bg: rgba(10,10,10,.75);
-      --hud-border: rgba(229,217,197,.12);
+      --hud-border: rgba(229,217,197,.1);
       --hud-text: #e5d9c5;
       --hud-muted: rgba(229,217,197,.4);
       --hud-accent: #c9a96e;
@@ -73,7 +73,7 @@
       letter-spacing: .08em; cursor: pointer;
       transition: all .3s ease; backdrop-filter: blur(8px);
     }
-    .hud-btn:hover { background: rgba(229,217,197,.13); color: var(--hud-text); }
+    .hud-btn:hover { background: rgba(229,217,197,.08); color: var(--hud-text); }
     .hud-btn.active { background: rgba(201,169,110,.22); border-color: var(--hud-accent); color: var(--hud-text); }
     .motion-bar {
       position: absolute; bottom: 60px; left: 50%;
@@ -163,7 +163,7 @@
     .tp-choices { display: flex; flex-direction: column; gap: 5px; margin-top: .5rem; }
     .tp-choices button {
       width: 100%; padding: .45rem .7rem;
-      background: rgba(229,217,197,.06);
+      background: rgba(229,217,197,.04);
       border: 1px solid var(--hud-border); border-radius: 8px;
       color: var(--hud-text); font-family: inherit;
       font-size: .7rem; cursor: pointer; transition: all .2s; text-align: left;
@@ -252,7 +252,7 @@
     .pay-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: .4rem; }
     .pay-option {
       padding: .5rem .3rem;
-      background: rgba(229,217,197,.06);
+      background: rgba(229,217,197,.04);
       border: 1px solid var(--hud-border);
       border-radius: 8px;
       color: var(--hud-text); font-family: inherit;
@@ -340,7 +340,7 @@
     /* Select */
     .ai-select {
       width: 100%; padding: .45rem .6rem;
-      background: rgba(229,217,197,.06);
+      background: rgba(229,217,197,.04);
       border: 1px solid var(--hud-border);
       border-radius: 7px;
       color: var(--hud-text); font-family: inherit;
@@ -508,7 +508,7 @@
     .home-section { width: 100%; max-width: 720px; margin-bottom: 2rem; }
     .home-section h2 {
       font-size: .85rem; text-transform: uppercase;
-      letter-spacing: .15em; color: rgba(229,217,197,.3);
+      letter-spacing: .15em; color: rgba(229,217,197,.25);
       margin-bottom: .75rem; padding-left: .25rem;
     }
     .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -1725,7 +1725,6 @@
             `Task: ${result.taskId} · Time: ${result.metadata.processingTimeMs}ms · Ready to preview on character`
           );
           consumeOneUse();
-          );
           // TODO: Apply animation to the 3D character
         } else {
           throw new Error('Generation failed');
@@ -1779,7 +1778,6 @@
             `Task: ${result.taskId} · Auto-rigged: ${autoRig} · Ready to load into scene`
           );
           consumeOneUse();
-          );
           // TODO: Load generated GLB into the scene
         } else {
           throw new Error('Generation failed');
@@ -1844,7 +1842,6 @@
             `Task: ${result.taskId} · Format: ${format.toUpperCase()} · Ready to load into viewport`
           );
           consumeOneUse();
-          );
           // TODO: Load generated scene into SparkRenderer
         } else {
           throw new Error('Generation failed');
