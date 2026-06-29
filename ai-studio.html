@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xue Mi · Giza World Portfolio</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <span class="eyebrow">Portfolio · source-aware heritage prototype</span>
+      <h1 id="page-title">Giza World · AI 3D Exhibition</h1>
+      <p>Reframed as a source-aware 3D heritage guide: animated avatars support tours, motion prompts, uncertainty labels, object records, review workflow, and future integration with the Giza World Three.js / 3DGS scene.</p>
+      <div class="actions">
+        <a href="#immersive-demo">Enter Immersive Demo</a>
+        <a class="secondary" href="#metadata">Museum Metadata</a>
+        <a class="secondary" href="#ethics">AI Ethics</a>
+      </div>
+    </section>
+
+    <section id="immersive-demo" class="immersive-shell" aria-labelledby="immersive-title">
+      <div>
+        <span class="eyebrow">Phase 6 immersive exhibition demo</span>
+        <h2 id="immersive-title">Source-aware guided scene</h2>
+        <p>This CSS/Web prototype simulates the exhibition shell that should later be replaced with the real Giza World 3DGS / Three.js viewport. It includes route markers, captions, motion cues, review badges, and a transcript.</p>
+      </div>
+      <div class="immersive-grid">
+        <div class="viewport" aria-live="polite">
+          <div class="sky"></div>
+          <div class="pyramid pyramid-large"></div>
+          <div class="pyramid pyramid-small"></div>
+          <button class="hotspot hotspot-a" type="button" data-hotspot="0">1</button>
+          <button class="hotspot hotspot-b" type="button" data-hotspot="1">2</button>
+          <button class="hotspot hotspot-c" type="button" data-hotspot="2">3</button>
+          <div class="npc-card">
+            <span id="npc-avatar" class="avatar">H</span>
+            <div>
+              <h3 id="npc-name">Hathor guide preview</h3>
+              <p id="npc-line">Loading guide line…</p>
+            </div>
+          </div>
+        </div>
+        <aside class="hud-panel">
+          <span id="tour-step" class="eyebrow">Stop 1 / 3</span>
+          <div class="progress-track"><div id="tour-progress" class="progress-fill"></div></div>
+          <h3 id="tour-name">Loading tour</h3>
+          <p id="scene-location"></p>
+          <p><span id="motion-icon" class="motion-icon">☀</span><strong>Motion:</strong> <span id="tour-motion"></span></p>
+          <p><strong>Accuracy:</strong> <span id="tour-accuracy"></span></p>
+          <p id="current-objective"></p>
+          <div id="tour-badges" class="badge-row"></div>
+          <div id="tour-choices" class="choice-list"></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="route-title">
+      <span class="eyebrow">Route map</span>
+      <h2 id="route-title">Museum quest path</h2>
+      <div id="route-nodes" class="route-grid"></div>
+    </section>
+
+    <section class="card" aria-labelledby="characters-title">
+      <span class="eyebrow">Characters</span>
+      <h2 id="characters-title">Guide cards and source status</h2>
+      <div id="character-roster" class="card-grid"></div>
+      <div id="source-grid" class="card-grid"></div>
+    </section>
+
+    <section class="card" aria-labelledby="transcript-title">
+      <span class="eyebrow">Tour transcript</span>
+      <h2 id="transcript-title">Reviewable path through the prototype</h2>
+      <p>The transcript records previewed stops for museum education review.</p>
+      <ul id="tour-transcript" class="transcript-list"></ul>
+    </section>
+
+    <section id="metadata" class="card" aria-labelledby="metadata-title">
+      <span class="eyebrow">Museum metadata schema</span>
+      <h2 id="metadata-title">Object records, sources, and public-use readiness</h2>
+      <p>Phase 6 keeps the immersive demo tied to source anchors, expert-review notes, rights warnings, and public-use restrictions.</p>
+      <div id="metadata-grid" class="card-grid"></div>
+      <div id="review-notes" class="card-grid"></div>
+    </section>
+
+    <section class="card" aria-labelledby="workflow-title">
+      <span class="eyebrow">Review workflow</span>
+      <h2 id="workflow-title">From draft prototype to public exhibition</h2>
+      <p>A guide cannot be public-facing until citations, rights, uncertainty labels, and specialist review are complete.</p>
+      <div id="workflow-grid" class="card-grid"></div>
+    </section>
+
+    <section id="ethics" class="card" aria-labelledby="ethics-title">
+      <span class="eyebrow">Ethics & AI interpretation statement</span>
+      <h2 id="ethics-title">Animated guides are interpretation, not resurrection</h2>
+      <p><strong>This project does not claim to recreate ancient Egyptians as they truly looked, sounded, or behaved.</strong> Animated figures are educational guide interfaces for discussing objects, sites, and reconstruction uncertainty.</p>
+      <p>Source-based, reconstructed, and speculative parts must remain visibly labeled. AI-generated motion or narration should be reviewed before public exhibition.</p>
+    </section>
+
+    <section class="card" aria-labelledby="handoff-title">
+      <span class="eyebrow">Implementation handoff</span>
+      <h2 id="handoff-title">Moving this into Asnow365/giza-world</h2>
+      <p>Copy the data files plus <code>integrations/giza-world/giza-world-bridge.js</code>, then wire scene switching, character focus, semantic animation presets, T2M prompt updates, route-map HUD, and accuracy panel updates to the real Giza World implementation.</p>
+      <div class="actions">
+        <a href="docs/giza_world_phase6_exhibition.md">Phase 6 exhibition notes</a>
+        <a class="secondary" href="docs/giza_world_phase5_review.md">Phase 5 review notes</a>
+        <a class="secondary" href="integrations/giza-world/README.md">Giza bridge README</a>
+        <a class="secondary" href="https://github.com/Asnow365/giza-world">View Giza World</a>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
