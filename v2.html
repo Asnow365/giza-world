@@ -1042,8 +1042,11 @@
     // Initialize: run when GIS library is ready
     function initGoogleAuth() {
       if (!window.google?.accounts?.id) {
-        // GIS not loaded yet, retry
         setTimeout(initGoogleAuth, 200);
+        return;
+      }
+      if (GOOGLE_CLIENT_ID.includes('YOUR_GOOGLE_CLIENT_ID')) {
+        console.log('[Auth] Google Sign-In disabled (no client ID configured)');
         return;
       }
 
@@ -1064,6 +1067,7 @@
       );
 
       console.log('[Auth] Google Identity Services initialized');
+      } catch(e) { console.warn('[Auth] GIS init failed:', e.message); }
     }
 
     // Kick off initialization
