@@ -1,1195 +1,2419 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Giza World - AI 3D Exhibition</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap');
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Noto Serif SC', serif;
-      overflow: hidden; background: #000;
-    }
-    canvas { display: block; }
-
-    /* ── Loading overlay ── */
-    #loading-overlay {
-      position: fixed; inset: 0; z-index: 100;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      background: #0a0a0a; color: #e5d9c5;
-      transition: opacity 0.8s ease;
-    }
-    #loading-overlay.hidden { opacity: 0; pointer-events: none; }
-    #loading-overlay .title { font-size: 1.6rem; margin-bottom: 1.5rem; letter-spacing: .15em; }
-
-    .progress-track {
-      width: 280px; height: 3px;
-      background: rgba(229,217,197,.15); border-radius: 2px; overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%; width: 0%; border-radius: 2px;
-      background: linear-gradient(90deg, #c9a96e, #e5d9c5);
-      transition: width .3s ease;
-    }
-    #loading-status { margin-top: .75rem; font-size: .85rem; opacity: .6; }
-
-    /* ── HUD ── */
-    #hud {
-      position: fixed; inset: 0; z-index: 10;
-      pointer-events: none;
-    }
-    #hud > * { pointer-events: auto; }
-
-    /* Title */
-    .hud-top {
-      position: absolute; top: 0; left: 0; right: 0;
-      padding: 1.2rem 1.5rem 1rem;
-      background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, transparent 100%);
-      text-align: center;
-    }
-    .hud-top h1 {
-      font-size: 1.15rem; font-weight: 600;
-      color: #e5d9c5; letter-spacing: .25em;
-    }
-    .hud-top p {
-      font-size: .7rem; color: rgba(229,217,197,.5);
-      letter-spacing: .1em; margin-top: .15rem;
-    }
-
-    /* Scene switching */
-    .scene-btns {
-      position: absolute; bottom: 32px; left: 50%;
-      transform: translateX(-50%);
-      display: flex; gap: 12px;
-    }
-    .scene-btn {
-      padding: .5rem 1.6rem;
-      background: rgba(229,217,197,.08);
-      border: 1px solid rgba(229,217,197,.2);
-      border-radius: 999px;
-      color: rgba(229,217,197,.6);
-      font-family: inherit; font-size: .8rem;
-      letter-spacing: .1em; cursor: pointer;
-      transition: all .3s ease;
-      backdrop-filter: blur(8px);
-    }
-    .scene-btn:hover { background: rgba(229,217,197,.15); color: #e5d9c5; }
-    .scene-btn.active {
-      background: rgba(201,169,110,.25);
-      border-color: #c9a96e; color: #e5d9c5;
-    }
-
-    /* Motion controls */
-    .motion-bar {
-      position: absolute; bottom: 80px; left: 50%;
-      transform: translateX(-50%);
-      display: flex; gap: 6px; align-items: center;
-    }
-    .motion-bar .scene-btn { font-size: .7rem; padding: .35rem 1rem; }
-    .motion-bar .scene-btn.active { background: rgba(201,169,110,.25); border-color: #c9a96e; color: #e5d9c5; }
-
-    /* T2M Panel */
-    #t2m-panel {
-      position: absolute; bottom: 120px; right: 20px;
-      background: rgba(10,10,10,.85);
-      border: 1px solid rgba(229,217,197,.15);
-      border-radius: 10px;
-      backdrop-filter: blur(12px);
-      min-width: 220px; overflow: hidden;
-      pointer-events: auto;
-    }
-    .t2m-header {
-      padding: .55rem 1rem;
-      color: #e5d9c5; font-size: .75rem; letter-spacing: .05em;
-      cursor: pointer; user-select: none;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .t2m-header:hover { background: rgba(229,217,197,.06); }
-    #t2m-arrow { transition: transform .2s; font-size: .65rem; }
-    #t2m-arrow.collapsed { transform: rotate(-90deg); }
-    .t2m-body {
-      padding: 0 1rem .75rem;
-      display: flex; flex-direction: column; gap: 6px;
-    }
-    .t2m-body.hidden { display: none; }
-    .t2m-body select,
-    .t2m-body input {
-      background: rgba(229,217,197,.08);
-      border: 1px solid rgba(229,217,197,.15);
-      border-radius: 6px; padding: .4rem .6rem;
-      color: #e5d9c5; font-size: .7rem;
-      font-family: inherit; outline: none;
-    }
-    .t2m-body select:focus,
-    .t2m-body input:focus { border-color: #c9a96e; }
-    .t2m-body select option { background: #1a1a1a; color: #e5d9c5; }
-    .t2m-body input::placeholder { color: rgba(229,217,197,.3); }
-    .t2m-body .scene-btn {
-      padding: .35rem; font-size: .7rem; text-align: center;
-    }
-    .t2m-body .scene-btn:disabled { opacity: .35; cursor: not-allowed; }
-
-    /* ── Character view panel ── */
-    #char-panel {
-      position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
-      width: 240px; z-index: 15; pointer-events: auto;
-      display: flex; flex-direction: column; gap: 8px;
-    }
-    #char-panel.hidden { display: none; }
-    .char-info {
-      text-align: center; padding: .6rem;
-      color: #e5d9c5;
-    }
-    .char-info .name { font-size: 1rem; font-weight: 600; letter-spacing: .1em; }
-    .char-info .motion { font-size: .7rem; color: rgba(229,217,197,.4); margin-top: 2px; }
-    .cp-section {
-      background: rgba(10,10,10,.7);
-      border: 1px solid rgba(229,217,197,.1);
-      border-radius: 10px; padding: .6rem .75rem;
-      backdrop-filter: blur(12px);
-    }
-    .cp-section h3 {
-      font-size: .6rem; text-transform: uppercase;
-      letter-spacing: .12em; color: rgba(229,217,197,.3);
-      margin-bottom: .4rem;
-    }
-    .cp-presets {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
-    }
-    #cp-switch { grid-template-columns: repeat(3, 1fr); }
-    .cp-presets button {
-      padding: .35rem; font-size: .65rem;
-      background: rgba(229,217,197,.06);
-      border: 1px solid rgba(229,217,197,.1);
-      border-radius: 6px; color: rgba(229,217,197,.5);
-      cursor: pointer; transition: all .2s;
-      font-family: inherit;
-    }
-    .cp-presets button:hover { background: rgba(229,217,197,.1); color: #e5d9c5; }
-    .cp-presets button.active { background: rgba(201,169,110,.2); border-color: #c9a96e; color: #e5d9c5; }
-
-    .cp-input-row {
-      display: flex; gap: 4px;
-    }
-    .cp-input-row input {
-      flex: 1; background: rgba(229,217,197,.06);
-      border: 1px solid rgba(229,217,197,.1);
-      border-radius: 6px; padding: .35rem .5rem;
-      color: #e5d9c5; font-size: .65rem;
-      font-family: inherit; outline: none;
-    }
-    .cp-input-row input:focus { border-color: #c9a96e; }
-    .cp-input-row input::placeholder { color: rgba(229,217,197,.2); }
-    .cp-input-row button {
-      padding: .35rem .65rem; font-size: .65rem;
-      background: rgba(201,169,110,.2);
-      border: 1px solid #c9a96e;
-      border-radius: 6px; color: #e5d9c5;
-      cursor: pointer; font-family: inherit;
-      transition: all .2s;
-    }
-    .cp-input-row button:hover { background: rgba(201,169,110,.35); }
-    .cp-input-row button:disabled { opacity: .3; cursor: not-allowed; }
-
-    /* Loading hint (scene switch) */
-    #scene-loading {
-      position: absolute; bottom: 90px; left: 50%;
-      transform: translateX(-50%);
-      color: rgba(229,217,197,.7);
-      font-size: .8rem; letter-spacing: .05em;
-      opacity: 0; transition: opacity .4s;
-    }
-    #scene-loading.show { opacity: 1; }
-
-    /* Control hint */
-    .hud-bottom-hint {
-      position: absolute; bottom: 55px; left: 50%;
-      transform: translateX(-50%);
-      font-size: .65rem; color: rgba(229,217,197,.25);
-      letter-spacing: .08em; white-space: nowrap;
-    }
-
-    /* Error */
-    #error-msg {
-      position: fixed; bottom: 50%; left: 50%;
-      transform: translate(-50%, 50%); z-index: 200;
-      background: rgba(180,60,60,.9);
-      color: #f0e0d0; padding: 1rem 2rem;
-      border-radius: 8px; font-size: .9rem;
-      text-align: center; display: none;
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(180,60,60,.4);
-    }
-
-    /* ── Home page ── */
-    #home-view {
-      position: fixed; inset: 0; z-index: 50;
-      background: #0a0a0a; color: #e5d9c5;
-      overflow-y: auto; display: flex;
-      flex-direction: column; align-items: center;
-      padding: 3rem 1.5rem 4rem;
-    }
-    #home-view.hidden { display: none; }
-    #home-view h1 {
-      font-size: 1.8rem; font-weight: 700;
-      letter-spacing: .15em; margin-bottom: .25rem;
-    }
-    #home-view .subtitle {
-      font-size: .8rem; color: rgba(229,217,197,.4);
-      letter-spacing: .1em; margin-bottom: 2.5rem;
-    }
-    .home-section {
-      width: 100%; max-width: 720px; margin-bottom: 2rem;
-    }
-    .home-section h2 {
-      font-size: .85rem; text-transform: uppercase;
-      letter-spacing: .15em; color: rgba(229,217,197,.3);
-      margin-bottom: .75rem; padding-left: .25rem;
-    }
-    .home-grid {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    .home-card {
-      background: rgba(229,217,197,.04);
-      border: 1px solid rgba(229,217,197,.1);
-      border-radius: 12px; padding: 1.25rem 1rem;
-      cursor: pointer; transition: all .3s ease;
-      text-align: center;
-    }
-    .home-card:hover {
-      background: rgba(229,217,197,.08);
-      border-color: rgba(229,217,197,.25);
-      transform: translateY(-2px);
-    }
-    .home-card .icon { font-size: 1.6rem; margin-bottom: .5rem; }
-    .home-card .name { font-size: .9rem; font-weight: 600; margin-bottom: .2rem; }
-    .home-card .desc { font-size: .65rem; color: rgba(229,217,197,.4); }
-
-    /* ── View container ── */
-    .view-3d { position: fixed; inset: 0; z-index: 10; }
-    .view-3d.hidden { display: none; }
-    .back-btn {
-      position: absolute; top: 16px; left: 16px; z-index: 20;
-      padding: .4rem 1rem; font-size: .75rem;
-      background: rgba(0,0,0,.5); border: 1px solid rgba(229,217,197,.15);
-      border-radius: 6px; color: rgba(229,217,197,.6);
-      cursor: pointer; backdrop-filter: blur(8px);
-      transition: all .3s;
-    }
-    .back-btn:hover { background: rgba(229,217,197,.1); color: #e5d9c5; }
-
-    /* = AI Studio Panel = */
-    #ai-panel {
-      position: fixed; top: 0; right: 0; bottom: 0; z-index: 99;
-      width: 380px; max-width: 92vw;
-      background: rgba(10,10,10,.97);
-      border-left: 1px solid rgba(229,217,197,.15);
-      backdrop-filter: blur(16px);
-      display: flex; flex-direction: column;
-      transform: translateX(100%);
-      transition: transform .35s ease;
-      padding: 1rem;
-    }
-    #ai-panel.open { transform: translateX(0); }
-    #ai-panel h3 {
-      font-size: .62rem; text-transform: uppercase;
-      letter-spacing: .1em; color: rgba(229,217,197,.4); margin: .8rem 0 .35rem;
-    }
-    #ai-panel h3:first-child { margin-top: 0; }
-    #ai-panel .ai-tabs {
-      display: flex; gap: 2px; background: rgba(229,217,197,.04);
-      border-radius: 10px; padding: 3px; margin-bottom: .5rem;
-    }
-    #ai-panel .ai-tab {
-      flex: 1; padding: .4rem; background: transparent; border: 0;
-      border-radius: 8px; color: rgba(229,217,197,.4);
-      font: inherit; font-size: .62rem; font-weight: 600; cursor: pointer;
-      transition: all .2s; text-align: center;
-    }
-    #ai-panel .ai-tab:hover { color: #e5d9c5; }
-    #ai-panel .ai-tab.active {
-      background: rgba(201,169,110,.18); color: #e5d9c5;
-    }
-    #ai-panel .ai-tab-content { display: none; }
-    #ai-panel .ai-tab-content.active { display: block; }
-    #ai-panel select, #ai-panel textarea, #ai-panel input {
-      width: 100%; padding: .45rem .6rem; margin-bottom: .4rem;
-      background: rgba(229,217,197,.06);
-      border: 1px solid rgba(229,217,197,.12);
-      border-radius: 7px; color: #e5d9c5;
-      font: inherit; font-size: .68rem; outline: none;
-    }
-    #ai-panel select:focus, #ai-panel textarea:focus, #ai-panel input:focus {
-      border-color: #c9a96e;
-    }
-    #ai-panel select option { background: #1a1a1a; color: #e5d9c5; }
-    #ai-panel textarea { min-height: 80px; resize: vertical; }
-    #ai-panel textarea::placeholder, #ai-panel input::placeholder {
-      color: rgba(229,217,197,.2);
-    }
-    #ai-panel .ai-gen-btn {
-      width: 100%; padding: .5rem;
-      background: linear-gradient(135deg, rgba(201,169,110,.3), rgba(201,169,110,.12));
-      border: 1px solid #c9a96e; border-radius: 8px;
-      color: #e5d9c5; font: inherit; font-size: .72rem; font-weight: 600;
-      cursor: pointer; transition: all .3s;
-    }
-    #ai-panel .ai-gen-btn:hover:not(:disabled) {
-      background: linear-gradient(135deg, rgba(201,169,110,.45), rgba(201,169,110,.22));
-    }
-    #ai-panel .ai-gen-btn:disabled { opacity: .3; cursor: not-allowed; }
-    #ai-panel .ai-result {
-      margin-top: .5rem; padding: .5rem; display: none;
-      background: rgba(0,0,0,.3); border-radius: 8px;
-      border: 1px solid rgba(229,217,197,.08);
-    }
-    #ai-panel .ai-result.show { display: block; }
-    #ai-panel .ai-result .ok { color: #8fbc8f; font-size: .65rem; }
-    #ai-panel .ai-result .err { color: #e8a090; font-size: .65rem; }
-    #ai-panel .ai-result .info { color: rgba(229,217,197,.5); font-size: .6rem; margin-top: .2rem; }
-    #ai-panel .ai-sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    #ai-panel .ai-sliders label { font-size: .58rem; color: rgba(229,217,197,.4); }
-    #ai-panel .ai-sliders input[type=range] { width: 100%; accent-color: #c9a96e; margin: 0; }
-    #ai-panel .ai-sliders .val { font-size: .58rem; color: #c9a96e; }
-    #ai-panel .ai-upload {
-      border: 2px dashed rgba(229,217,197,.12); border-radius: 10px;
-      padding: 1.2rem; text-align: center; cursor: pointer;
-      color: rgba(229,217,197,.3); font-size: .65rem; margin-bottom: .5rem;
-    }
-    #ai-panel .ai-upload:hover { border-color: #c9a96e; color: #e5d9c5; }
-    #ai-panel .ai-upload input { display: none; }
-    #ai-panel .ai-preview { text-align: center; margin: .5rem 0; }
-    #ai-panel .ai-preview img { max-width: 100%; max-height: 150px; border-radius: 6px; }
-
-  </style>
-</head>
-<body>
-
-  <!-- ═══ Home Page ═══ -->
-  <div id="home-view">
-    <h1>Giza World</h1>
-    <div class="subtitle">AI 3D Exhibition</div>
-
-    <div class="home-section">
-      <h2>Scenes</h2>
-      <div class="home-grid" id="scene-cards"></div>
-    </div>
-
-    <div class="home-section">
-      <h2>Characters</h2>
-      <div class="home-grid" id="char-cards"></div>
-    </div>
-  </div>
-
-  <!-- ═══ 3D View ═══ -->
-  <div id="view-3d" class="view-3d hidden">
-    <button class="back-btn" id="back-btn">← Back</button>
-
-    <!-- ═══ Loading Overlay ═══ -->
-    <div id="loading-overlay">
-      <div class="title">Giza World · AI 3D Exhibition</div>
-      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
-      <div id="loading-status">Initializing…</div>
-    </div>
-
-    <!-- ═══ HUD ═══ -->
-    <div id="hud">
-      <div class="hud-top">
-        <h1>Giza World · AI 3D Exhibition</h1>
-        <p>Giza World · AI 3D Exhibition</p>
-      </div>
-
-      <div class="scene-btns" id="scene-btns">
-        <button class="scene-btn active" data-idx="0">Scene 1</button>
-        <button class="scene-btn" data-idx="1">Scene 2</button>
-      </div>
-
-      <div class="motion-bar" id="motion-bar">
-        <button class="scene-btn" id="motion-all">⏸ All</button>
-        <button class="scene-btn char-btn" data-char="0">Hathor ▶</button>
-        <button class="scene-btn char-btn" data-char="1">Menkaure ▶</button>
-      </div>
-
-      <!-- ═══ T2M Panel ═══ -->
-      <div id="t2m-panel">
-        <div class="t2m-header" id="t2m-toggle">⚡ Text-to-Motion <span id="t2m-arrow">▾</span></div>
-        <div class="t2m-body" id="t2m-body">
-          <select id="t2m-target">
-            <option value="0">The Goddess Hathor</option>
-            <option value="1">King Menkaure</option>
-            <option value="2">Ranefer</option>
-          </select>
-          <input id="t2m-prompt" type="text" placeholder="Describe the motion…" />
-          <button id="t2m-btn" class="scene-btn">Generate</button>
-        </div>
-      </div>
-
-      <div id="scene-loading">Loading scene…</div>
-      <div class="hud-bottom-hint">Drag to rotate · Scroll to zoom</div>
-    </div>
-
-    <div id="error-msg"></div>
-
-    <!-- ═══ Character View Panel ═══ -->
-    <div id="char-panel" class="hidden">
-      <div class="char-info">
-        <div class="name" id="cp-name">Char</div>
-        <div class="motion" id="cp-motion">Default</div>
-      </div>
-
-      <div class="cp-section">
-        <h3>Switch Character</h3>
-        <div class="cp-presets" id="cp-switch">
-          <button data-idx="0">Hathor</button>
-          <button data-idx="1">Menkaure</button>
-          <button data-idx="2">Ranefer</button>
-        </div>
-      </div>
-
-      <div class="cp-section">
-        <h3>Motion Presets</h3>
-        <div class="cp-presets" id="cp-presets">
-          <button data-motion="1">1</button>
-          <button data-motion="2">2</button>
-          <button data-motion="3">3</button>
-          <button data-motion="4">4</button>
-          <button data-motion="5">5</button>
-        </div>
-      </div>
-
-      <div class="cp-section">
-        <h3>Text to Motion</h3>
-        <div class="cp-input-row">
-          <input id="t2m-input" type="text" placeholder="Describe the motion…" />
-          <button id="t2m-go">Generate</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ Import Map ═══ -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
-      "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/2.1.0/spark.module.js"
-    }
-  }
-  </script>
-
-  <!-- ═══ Main script ═══ -->
-  <script type="module">
-    import * as THREE from 'three';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-    import { SparkRenderer, SplatMesh } from '@sparkjsdev/spark';
-    import { DragControls } from 'three/addons/controls/DragControls.js';
-
-    /* ─── Config ─── */
-    const SCENE_FILES = [
-      'scene/1/2f07d44a6b43046c9d3208f2dd6f4e17.ply',
-      'scene/2/2e184245233163d44ec1ea2692df242b.ply',
-    ];
-
-    const CHAR_FILES = [
-      'motion/1/ancient+egyptian+statue+3d+model (1).glb',
-      'motion/2/ancient+statue+3d+model.glb',
-      'motion/4/stone+statue+3d+model.glb',
-    ];
-
-    const CHAR_ANIM_SETS = [null, null, null];
-
-    function buildAnimSets() {
-      CHAR_ANIM_SETS[0] = [
-        'motion/1/ancient+egyptian+statue+3d+model (1).glb',
-        'motion/1/ancient+egyptian+statue+3d+model (2).glb',
-        'motion/1/ancient+egyptian+statue+3d+model (3).glb',
-        'motion/1/ancient+egyptian+statue+3d+model (4).glb',
-        'motion/1/ancient+egyptian+statue+3d+model (5).glb',
-      ];
-      CHAR_ANIM_SETS[1] = [
-        'motion/2/ancient+statue+3d+model.glb',
-        'motion/2/ancient+statue+3d+model2.glb',
-        'motion/2/ancient+statue+3d+model3.glb',
-        'motion/2/ancient+statue+3d+model4.glb',
-      ];
-      CHAR_ANIM_SETS[2] = [
-        'motion/4/stone+statue+3d+model.glb',
-        'motion/4/stone+statue+3d+model2 (2).glb',
-        'motion/4/stone+statue+3d+model2 (3).glb',
-        'motion/4/stone+statue+3d+model2 (4).glb',
-        'motion/4/stone+statue+3d+model2 (5).glb',
-      ];
-    }
-    buildAnimSets();
-
-    const CHAR_POSITIONS = [
-      [{ p: [-1.2, 0, 1.0], r: Math.PI / 8 }, { p: [ 1.2, 0, 1.0], r: -Math.PI / 8 }],
-      [{ p: [-1.2, 0, 1.0], r: Math.PI / 8 }, { p: [ 1.2, 0, 1.0], r: -Math.PI / 8 }],
-    ];
-
-    const SCENE_CAMERAS = [
-      { pos: [-0.93, 1.69, -3.95], target: [0, 0.8, 0] },
-      { pos: [-2.86, 1.52, 0.78], target: [0, 0.8, 0] },
-    ];
-
-    /* ─── DOM refs ─── */
-    const overlay   = document.getElementById('loading-overlay');
-    const fillBar   = document.getElementById('progress-fill');
-    const loadStat  = document.getElementById('loading-status');
-    const sceneLoad = document.getElementById('scene-loading');
-    const errMsg    = document.getElementById('error-msg');
-    const btns      = document.querySelectorAll('.scene-btn');
-    const homeView  = document.getElementById('home-view');
-    const view3d    = document.getElementById('view-3d');
-    const hudEl     = document.getElementById('hud');
-    const charPanel = document.getElementById('char-panel');
-
-    const NAV_CARDS = [
-      { section: 'scene-cards', type: 'scene', idx: 0, icon: '🏛️', name: 'Scene 1', desc: '' },
-      { section: 'scene-cards', type: 'scene', idx: 1, icon: '🏛️', name: 'Scene 2', desc: '' },
-      { section: 'char-cards', type: 'character', idx: 0, icon: '🕺', name: 'The Goddess Hathor', desc: '5 animations' },
-      { section: 'char-cards', type: 'character', idx: 1, icon: '🕺', name: 'King Menkaure', desc: '4 animations' },
-      { section: 'char-cards', type: 'character', idx: 2, icon: '🕺', name: 'Ranefer', desc: '5 animations' },
-    ];
-
-    function generateCards() {
-      NAV_CARDS.forEach(c => {
-        const div = document.createElement('div');
-        div.className = 'home-card';
-        div.innerHTML = `<div class="icon">${c.icon}</div><div class="name">${c.name}</div>${c.desc ? `<div class="desc">${c.desc}</div>` : ''}`;
-        div.addEventListener('click', () => switchView(c.type, c.idx));
-        document.getElementById(c.section).appendChild(div);
-      });
-    }
-    generateCards();
-
-    let currentView = 'home';
-    let loadedScenes = new Set();
-    let loadedChars = false;
-
-    function switchView(type, idx) {
-      if (type === 'home') {
-        currentView = 'home';
-        homeView.classList.remove('hidden');
-        view3d.classList.add('hidden');
-        charPanel.classList.add('hidden');
-        return;
-      }
-
-      currentView = type + idx;
-      homeView.classList.add('hidden');
-      view3d.classList.remove('hidden');
-      renderer.domElement.style.display = 'block';
-
-      if (type === 'scene') {
-        hudEl.style.display = '';
-        charPanel.classList.add('hidden');
-        if (!loadedScenes.has(idx)) {
-          loadSceneView(idx);
-        } else if (idx !== currentSceneIdx) {
-          switchScene(idx);
-        }
-      } else if (type === 'character') {
-        hudEl.style.display = 'none';
-        charPanel.classList.remove('hidden');
-        loadCharacterView(idx);
-      }
-    }
-
-    document.getElementById('back-btn').addEventListener('click', () => switchView('home', 0));
-
-    /* ─── Three.js setup ─── */
-    const scene    = new THREE.Scene();
-    const camera   = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
-    camera.position.set(...SCENE_CAMERAS[0].pos);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.6;
-    document.body.prepend(renderer.domElement);
-
-    const sparkRenderer = new SparkRenderer({
-      renderer,
-      covSplats: true,
-      enable2DGS: true,
-      maxStdDev: 3.5,
-      blurAmount: 0.2,
-    });
-    scene.add(sparkRenderer);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(...SCENE_CAMERAS[0].target);
-    window.getView = () => console.log(JSON.stringify({ pos: camera.position.toArray(), target: controls.target.toArray() }));
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.minDistance   = 1.5;
-    controls.maxDistance   = 15;
-    controls.maxPolarAngle = Math.PI / 2.1;
-    controls.update();
-
-    /* ─── Lighting ─── */
-    const ambient = new THREE.AmbientLight(0xffffff, 1.2);
-    scene.add(ambient);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
-    dirLight.position.set(5, 10, 7);
-    scene.add(dirLight);
-
-    /* ─── SplatScene management ─── */
-    let currentSplatMesh = null;
-    const SCENE_ROTATIONS = [
-      { x: -Math.PI / 2, y: 0, z: 0 },
-      { x: -Math.PI / 2, y: 0, z: 0 },
-    ];
-
-    function loadSplatScene(idx) {
-      return new Promise((resolve) => {
-        if (currentSplatMesh) scene.remove(currentSplatMesh);
-        const mesh = new SplatMesh({
-          url: SCENE_FILES[idx],
-          onProgress: (pct) => {
-            setProgress(10 + pct * 30, `Loading 3D scene…`);
-          },
-        });
-        const r = SCENE_ROTATIONS[idx];
-        mesh.rotation.set(r.x, r.y, r.z);
-        scene.add(mesh);
-        currentSplatMesh = mesh;
-        setTimeout(() => resolve(mesh), 2000);
-      });
-    }
-
-    /* ─── Character management ─── */
-    const gltfLoader = new GLTFLoader();
-    let charModels   = [];
-    const CHAR_NAMES = ['The Goddess Hathor', 'King Menkaure', 'Ranefer'];
-
-    const charStates = CHAR_NAMES.map(name => ({
-      name,
-      paused: false,
-      mixer: null,
-      action: null,
-      animName: '',
-      extraClips: null,
-    }));
-
-    function setProgress(pct, text) {
-      fillBar.style.width = Math.min(pct, 100) + '%';
-      if (text) loadStat.textContent = text;
-    }
-
-    async function loadCharacters(onProgress) {
-      const total = CHAR_FILES.length;
-      const results = [];
-      for (let i = 0; i < total; i++) {
-        try {
-          const gltf = await new Promise((resolve, reject) => {
-            gltfLoader.load(CHAR_FILES[i], resolve, undefined, reject);
-          });
-          results.push(gltf);
-        } catch (e) {
-          console.warn(`Char ${i} load failed:`, e);
-          results.push(null);
-        }
-        onProgress?.((i + 1) / total, `Loading model ${i + 1}/${total}…`);
-      }
-      return results;
-    }
-
-    const charGroup = new THREE.Group();
-    scene.add(charGroup);
-
-    function clearCharacters() {
-      charStates.forEach(s => { s.mixer = null; s.action = null; s.extraClips = null; });
-      while (charGroup.children.length) {
-        charGroup.remove(charGroup.children[0]);
-      }
-    }
-
-    function placeCharacters(sceneIdx, maxChars = 2) {
-      clearCharacters();
-      // Characters disabled in scene view
-      updateMasterButton();
-      setTimeout(() => updateDragObjects(), 100);
-    }
-
-    /* Update single char button */
-    function updateCharButton(i) {
-      const btn = document.querySelector(`.char-btn[data-char="${i}"]`);
-      if (!btn) return;
-      const state = charStates[i];
-      if (!state.action) {
-        btn.textContent = `${CHAR_NAMES[i]} ✗`;
-        btn.classList.remove('active');
-        return;
-      }
-      btn.textContent = state.paused ? `${CHAR_NAMES[i]} ▶` : `${CHAR_NAMES[i]} ⏸`;
-      btn.classList.toggle('active', !state.paused);
-    }
-
-    /* Update master button */
-    function updateMasterButton() {
-      const allPaused = charStates.every(s => !s.action || s.paused);
-      const allActive = charStates.some(s => s.action);
-      const btn = document.getElementById('motion-all');
-      if (!allActive) { btn.textContent = '⏸ All'; return; }
-      btn.textContent = allPaused ? '▶ All' : '⏸ All';
-    }
-
-    /* ─── Scene switching ─── */
-    let currentSceneIdx = -1;
-
-    async function switchScene(idx) {
-      if (idx === currentSceneIdx) return;
-      sceneLoad.classList.add('show');
-      sceneLoad.textContent = 'Switching scene…';
-
-      try {
-        await loadSplatScene(idx);
-      } catch (e) {
-        console.error('Scene load failed:', e);
-        showError(`Scene ${idx + 1} failed to load`);
-        sceneLoad.classList.remove('show');
-        return;
-      }
-
-      const cam = SCENE_CAMERAS[idx];
-      camera.position.set(cam.pos[0], cam.pos[1], cam.pos[2]);
-      controls.target.set(cam.target[0], cam.target[1], cam.target[2]);
-      controls.update();
-
-      placeCharacters(idx);
-      currentSceneIdx = idx;
-      sceneLoad.classList.remove('show');
-      btns.forEach(b => b.classList.toggle('active', +b.dataset.idx === idx));
-    }
-
-    function showError(msg) {
-      errMsg.textContent = msg;
-      errMsg.style.display = 'block';
-      setTimeout(() => { errMsg.style.display = 'none'; }, 6000);
-    }
-
-    /* ─── View loaders ─── */
-    async function loadSceneView(idx) {
-      controls.minDistance = 1.5;
-      controls.maxDistance = 15;
-      controls.maxPolarAngle = Math.PI / 2.1;
-
-      overlay.classList.remove('hidden');
-      overlay.style.display = '';
-      setProgress(0, 'Initializing…');
-      await new Promise(r => setTimeout(r, 200));
-
-      if (!loadedChars) {
-        setProgress(5, 'Loading characters…');
-        charModels = await loadCharacters((ratio, text) => {
-          setProgress(5 + ratio * 40, text);
-        });
-        loadedChars = true;
-        setProgress(45, 'Characters ready');
-      }
-
-      setProgress(50, 'Loading 3D scene…');
-      try {
-        await loadSplatScene(idx);
-      } catch (e) {
-        console.error('Scene load failed:', e);
-        showError('Scene load failed');
-      }
-      setProgress(80, 'Scene ready');
-
-      placeCharacters(idx);
-      currentSceneIdx = idx;
-      loadedScenes.add(idx);
-      setProgress(100, 'All ready');
-
-      await new Promise(r => setTimeout(r, 400));
-      overlay.classList.add('hidden');
-      setTimeout(() => { overlay.style.display = 'none'; }, 900);
-    }
-
-    let charViewIdx = -1;
-
-    async function loadCharacterView(idx) {
-      if (currentSplatMesh) {
-        scene.remove(currentSplatMesh);
-        currentSplatMesh = null;
-      }
-
-      overlay.classList.remove('hidden');
-      overlay.style.display = '';
-      setProgress(10, 'Loading…');
-      await new Promise(r => setTimeout(r, 200));
-
-      if (!loadedChars) {
-        charModels = await loadCharacters((ratio, text) => {
-          setProgress(10 + ratio * 50, text);
-        });
-        loadedChars = true;
-      }
-
-      setProgress(70, 'Preparing…');
-      clearCharacters();
-
-      const model = charModels[idx];
-      if (model) {
-        const handle = new THREE.Mesh(
-          new THREE.BoxGeometry(1.4, 2.2, 1.4),
-          new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
-        );
-        handle.position.set(0, 1, 0);
-        handle.rotation.y = -Math.PI / 2;
-
-        const m = model.scene;
-        m.scale.set(3, 3, 3);
-        m.position.set(0, -1, 0);
-        handle.add(m);
-        charGroup.add(handle);
-
-        const state = charStates[idx];
-        if (model.animations?.length) {
-          state.mixer = new THREE.AnimationMixer(m);
-          state.action = state.mixer.clipAction(model.animations[0]);
-          state.action.play();
-          state.paused = false;
-          state.animName = 'Anim 1';
-        }
-
-        const animFiles = CHAR_ANIM_SETS[idx];
-        if (animFiles) {
-          state.extraClips = [];
-          for (let i = 1; i < animFiles.length; i++) {
-            try {
-              const gltf = await new Promise((resolve, reject) => {
-                gltfLoader.load(animFiles[i], resolve, undefined, reject);
-              });
-              if (gltf.animations?.length) {
-                state.extraClips.push(gltf.animations[0]);
-              }
-            } catch (e) {
-              console.warn(`Anim ${i} load failed:`, e);
-            }
-          }
-        }
-      }
-
-      camera.position.set(0, 1.2, 4);
-      controls.target.set(0, 1.2, 0);
-      controls.minDistance = 1;
-      controls.maxDistance = 20;
-      controls.maxPolarAngle = Math.PI;
-      controls.update();
-
-      charViewIdx = idx;
-
-      document.getElementById('cp-name').textContent = CHAR_NAMES[idx] || `Char ${idx}`;
-      const state = charStates[idx];
-      document.getElementById('cp-motion').textContent = state?.animName || 'Default';
-
-      setProgress(100, 'Ready');
-      await new Promise(r => setTimeout(r, 300));
-      overlay.classList.add('hidden');
-      setTimeout(() => { overlay.style.display = 'none'; }, 900);
-    }
-
-    /* ─── Initialization ─── */
-    async function init() {
-      setProgress(0, 'Initializing…');
-      await new Promise(r => setTimeout(r, 100));
-      overlay.classList.add('hidden');
-      setTimeout(() => { overlay.style.display = 'none'; }, 500);
-    }
-
-    init().catch(e => {
-      console.error(e);
-      showError('Init failed: ' + e.message);
-      overlay.classList.add('hidden');
-    });
-
-    /* ─── Event bindings ─── */
-    btns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = +btn.dataset.idx;
-        if (idx === currentSceneIdx) return;
-        if (charModels.length === 0) return;
-        switchScene(idx);
-      });
-    });
-
-    document.getElementById('motion-all').addEventListener('click', () => {
-      const allPaused = charStates.every(s => !s.action || s.paused);
-      charStates.forEach(s => {
-        if (s.action) {
-          s.paused = !allPaused;
-          s.action.paused = s.paused;
-        }
-      });
-      updateMasterButton();
-      document.querySelectorAll('.char-btn').forEach((_, i) => updateCharButton(i));
-    });
-
-    document.querySelectorAll('.char-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const i = +btn.dataset.char;
-        const s = charStates[i];
-        if (!s.action) return;
-        s.paused = !s.paused;
-        s.action.paused = s.paused;
-        updateCharButton(i);
-        updateMasterButton();
-      });
-    });
-
-    let dragControls = null;
-    function updateDragObjects() {
-      const objects = [];
-      charGroup.children.forEach(c => { if (c.isMesh) objects.push(c); });
-      if (!dragControls) {
-        dragControls = new DragControls(objects, camera, renderer.domElement);
-        dragControls.addEventListener('dragstart', () => { controls.enabled = false; });
-        dragControls.addEventListener('drag', (e) => {
-          e.object.position.z = Math.max(0.8, e.object.position.z);
-        });
-        dragControls.addEventListener('dragend', () => { controls.enabled = true; });
-      } else {
-        while (dragControls.objects.length) dragControls.objects.pop();
-        objects.forEach(o => dragControls.objects.push(o));
-      }
-    }
-
-    let t2mCollapsed = false;
-    document.getElementById('t2m-toggle').addEventListener('click', () => {
-      t2mCollapsed = !t2mCollapsed;
-      document.getElementById('t2m-body').classList.toggle('hidden', t2mCollapsed);
-      document.getElementById('t2m-arrow').classList.toggle('collapsed', t2mCollapsed);
-    });
-
-    document.getElementById('t2m-btn').addEventListener('click', () => {
-      const target = document.getElementById('t2m-target').value;
-      const prompt = document.getElementById('t2m-prompt').value.trim();
-      if (!prompt) return;
-      console.log(`[T2M] char ${target}: "${prompt}" — API not yet connected`);
-      showError('T2M API coming soon');
-    });
-
-    // ── Character panel events ──
-    document.querySelectorAll('#cp-switch button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = +btn.dataset.idx;
-        if (idx === charViewIdx) return;
-        document.querySelectorAll('#cp-switch button').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        switchView('character', idx);
-      });
-    });
-
-    document.querySelectorAll('#cp-presets button').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const motionIdx = parseInt(btn.dataset.motion) - 1;
-        document.getElementById('cp-motion').textContent = `Anim ${motionIdx + 1}`;
-        document.querySelectorAll('#cp-presets button').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        const state = charStates[charViewIdx];
-        if (state?.extraClips && state.mixer) {
-          if (motionIdx === 0) {
-            const defaultClip = state.action._clip;
-            state.action.stop();
-            state.action = state.mixer.clipAction(defaultClip);
-            state.action.play();
-          } else {
-            const clip = state.extraClips[motionIdx - 1];
-            if (clip) {
-              state.action.stop();
-              state.action = state.mixer.clipAction(clip);
-              state.action.play();
-            }
-          }
-        }
-      });
-    });
-
-    document.getElementById('t2m-go').addEventListener('click', () => {
-      const prompt = document.getElementById('t2m-input').value.trim();
-      if (!prompt) { showError('Please describe the motion'); return; }
-      console.log(`[T2M] prompt: "${prompt}"`);
-      showError('T2M API coming soon');
-    });
-    document.getElementById('t2m-input').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') document.getElementById('t2m-go').click();
-    });
-
-    window.addEventListener('resize', () => {
-      const w = window.innerWidth, h = window.innerHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    });
-
-
-    /* ===== AI Studio Panel Logic ===== */
-    // Tab switching
-    var aiTabs = document.querySelectorAll('#ai-panel .ai-tab');
-    var aiContents = document.querySelectorAll('#ai-panel .ai-tab-content');
-    aiTabs.forEach(function(tab) {
-      tab.addEventListener('click', function() {
-        var tid = this.dataset.tab;
-        aiTabs.forEach(function(t) { t.classList.remove('active'); });
-        this.classList.add('active');
-        aiContents.forEach(function(c) { c.classList.remove('active'); });
-        document.getElementById('tab-' + tid).classList.add('active');
-      });
-    });
-
-    // Slider displays
-    var at2mDur = document.getElementById('at2m-dur');
-    var at2mInt = document.getElementById('at2m-int');
-    if (at2mDur) at2mDur.addEventListener('input', function() {
-      document.getElementById('at2m-durv').textContent = this.value + 's';
-    });
-    if (at2mInt) at2mInt.addEventListener('input', function() {
-      document.getElementById('at2m-intv').textContent = this.value;
-    });
-
-    // Generate button (placeholder)
-    var at2mGen = document.getElementById('at2m-gen');
-    if (at2mGen) at2mGen.addEventListener('click', function() {
-      var prompt = document.getElementById('at2m-prompt').value.trim();
-      if (!prompt) { showError('Please describe the motion'); return; }
-      var ok = document.getElementById('at2m-ok');
-      var inf = document.getElementById('at2m-info');
-      var res = document.getElementById('at2m-result');
-      res.classList.add('show');
-      ok.textContent = 'Motion generation queued';
-      inf.textContent = 'API ready. Configure TripoSR endpoint to enable.';
-      console.log('[T2M]', prompt);
-    });
-
-    // Image upload
-    var ai2dUp = document.getElementById('ai2d-upload');
-    var ai2dFile = document.getElementById('ai2d-file');
-    var ai2dGen = document.getElementById('ai2d-gen');
-    var ai2dPrev = document.getElementById('ai2d-preview');
-    if (ai2dUp) ai2dUp.addEventListener('click', function() { ai2dFile.click(); });
-    if (ai2dFile) ai2dFile.addEventListener('change', function() {
-      var f = this.files[0];
-      if (f) {
-        ai2dGen.disabled = false;
-        var url = URL.createObjectURL(f);
-        ai2dPrev.innerHTML = '<img src="' + url + '" alt="Preview">';
-      }
-    });
-    if (ai2dGen) ai2dGen.addEventListener('click', function() {
-      if (!ai2dFile.files[0]) { showError('Select an image first'); return; }
-      var ok = document.getElementById('ai2d-ok');
-      var inf = document.getElementById('ai2d-info');
-      var res = document.getElementById('ai2d-result');
-      res.classList.add('show');
-      ok.textContent = '3D generation queued';
-      inf.textContent = 'API ready. Configure TripoSR endpoint to enable.';
-      console.log('[I2D]', ai2dFile.files[0].name);
-    });
-
-    // AI Panel toggle button
-    var aiPanelBtn = document.createElement('button');
-    aiPanelBtn.textContent = 'AI Studio';
-    aiPanelBtn.style.cssText = 'position:absolute;top:14px;right:20px;z-index:25;padding:.4rem .8rem;background:rgba(0,0,0,.5);border:1px solid rgba(229,217,197,.12);border-radius:999px;color:rgba(229,217,197,.55);font:inherit;font-size:.68rem;cursor:pointer;backdrop-filter:blur(8px);';
-    aiPanelBtn.addEventListener('click', function() {
-      var p = document.getElementById('ai-panel');
-      p.classList.toggle('open');
-      var on = p.classList.contains('open');
-      aiPanelBtn.style.background = on ? 'rgba(201,169,110,.2)' : 'rgba(0,0,0,.5)';
-      aiPanelBtn.style.borderColor = on ? '#c9a96e' : 'rgba(229,217,197,.12)';
-      aiPanelBtn.style.color = on ? '#e5d9c5' : 'rgba(229,217,197,.55)';
-    });
-    var hud = document.getElementById('hud');
-    if (hud) hud.appendChild(aiPanelBtn);
-
-
-    /* ─── Animation loop ─── */
-    const clock = new THREE.Clock();
-
-    function animate() {
-      requestAnimationFrame(animate);
-      const dt = clock.getDelta();
-
-      charStates.forEach(s => {
-        if (!s.paused && s.mixer) {
-          s.mixer.update(dt);
-        }
-      });
-
-      controls.update();
-      renderer.render(scene, camera);
-    }
-
-    animate();
-  </script>
-
-  <!-- AI Studio Panel -->
-  <div id="ai-panel">
-    <div class="ai-tabs">
-      <button class="ai-tab active" data-tab="t2m">Text to Motion</button>
-      <button class="ai-tab" data-tab="i2d">Image to 3D</button>
-    </div>
-
-    <div class="ai-tab-content active" id="tab-t2m">
-      <h3>Target Character</h3>
-      <select id="at2m-char">
-        <option value="0">The Goddess Hathor</option>
-        <option value="1">King Menkaure</option>
-        <option value="2">Ranefer</option>
-      </select>
-      <h3>Motion Description</h3>
-      <textarea id="at2m-prompt" placeholder="Describe the motion: e.g. The goddess slowly raises her right arm, palm facing upward, then steps forward gracefully..."></textarea>
-      <h3>Parameters</h3>
-      <div class="ai-sliders">
-        <div>
-          <label>Duration <span class="val" id="at2m-durv">3.0s</span></label>
-          <input type="range" id="at2m-dur" min="1" max="10" step="0.5" value="3">
-        </div>
-        <div>
-          <label>Intensity <span class="val" id="at2m-intv">0.7</span></label>
-          <input type="range" id="at2m-int" min="0.1" max="1" step="0.1" value="0.7">
-        </div>
-      </div>
-      <button class="ai-gen-btn" id="at2m-gen">Generate Motion</button>
-      <div class="ai-result" id="at2m-result">
-        <div class="ok" id="at2m-ok"></div>
-        <div class="err" id="at2m-err"></div>
-        <div class="info" id="at2m-info"></div>
-      </div>
-    </div>
-
-    <div class="ai-tab-content" id="tab-i2d">
-      <h3>Upload Image</h3>
-      <div class="ai-upload" id="ai2d-upload">
-        Click or drag an image here
-        <input type="file" id="ai2d-file" accept="image/*">
-      </div>
-      <div class="ai-preview" id="ai2d-preview"></div>
-      <h3>Quality</h3>
-      <select id="ai2d-quality">
-        <option value="standard">Standard</option>
-        <option value="high" selected>High</option>
-      </select>
-      <button class="ai-gen-btn" id="ai2d-gen" disabled>Generate 3D Model</button>
-      <div class="ai-result" id="ai2d-result">
-        <div class="ok" id="ai2d-ok"></div>
-        <div class="err" id="ai2d-err"></div>
-        <div class="info" id="ai2d-info"></div>
-      </div>
-    </div>
-  </div>
-
-</body>
-</html>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Giza World v3 - AI 3D Exhibition</title>
+
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* OpenAI-style clean geometric sans-serif */
+
+    :root {
+      --hud-bg: rgba(10,10,10,.75);
+      --hud-border: rgba(229,217,197,.1);
+      --hud-text: #e5d9c5;
+      --hud-muted: rgba(229,217,197,.4);
+      --hud-accent: #c9a96e;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; overflow: hidden; background: #000; }
+    canvas { display: block; }
+
+    /* ═══ Loading Overlay ═══ */
+    #loading-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #0a0a0a; color: var(--hud-text);
+      transition: opacity 0.8s ease;
+    }
+    #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+    #loading-overlay .load-title { font-size: 1.6rem; margin-bottom: 1.5rem; letter-spacing: .15em; }
+    .progress-track {
+      width: 280px; height: 3px;
+      background: rgba(229,217,197,.15); border-radius: 2px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; width: 0%; border-radius: 2px;
+      background: linear-gradient(90deg, #c9a96e, #e5d9c5);
+      transition: width .3s ease;
+    }
+    #loading-status { margin-top: .75rem; font-size: .85rem; opacity: .6; }
+
+    /* ═══ HUD ═══ */
+    #hud { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
+    #hud > * { pointer-events: auto; }
+    .hud-top {
+      position: absolute; top: 0; left: 0; right: 0;
+      padding: 1rem 1.5rem .8rem;
+      background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, transparent 100%);
+      text-align: center;
+    }
+    .hud-top h1 { font-size: 1rem; font-weight: 600; color: var(--hud-text); letter-spacing: .2em; }
+    .hud-top p { font-size: .65rem; color: var(--hud-muted); letter-spacing: .08em; margin-top: .1rem; }
+
+    /* HUD Buttons */
+    .scene-btns {
+      position: absolute; bottom: 100px; left: 50%;
+      transform: translateX(-50%); display: flex; gap: 10px;
+    }
+    .hud-btn {
+      padding: .45rem 1.4rem;
+      background: rgba(229,217,197,.08);
+      border: 1px solid rgba(229,217,197,.18);
+      border-radius: 999px;
+      color: rgba(229,217,197,.55);
+      font-family: inherit; font-size: .75rem;
+      letter-spacing: .08em; cursor: pointer;
+      transition: all .3s ease; backdrop-filter: blur(8px);
+    }
+    .hud-btn:hover { background: rgba(229,217,197,.08); color: var(--hud-text); }
+    .hud-btn.active { background: rgba(201,169,110,.22); border-color: var(--hud-accent); color: var(--hud-text); }
+    .motion-bar {
+      position: absolute; bottom: 60px; left: 50%;
+      transform: translateX(-50%); display: flex; gap: 4px; align-items: center;
+    }
+    .motion-bar .hud-btn { font-size: .65rem; padding: .3rem .8rem; }
+
+    /* Top-right tool buttons */
+    .hud-toolbar {
+      position: absolute; top: 14px; right: 20px; z-index: 25;
+      display: flex; gap: 8px;
+    }
+    .hud-tool-btn {
+      padding: .45rem .9rem;
+      background: rgba(0,0,0,.5);
+      border: 1px solid var(--hud-border);
+      border-radius: 999px;
+      color: rgba(229,217,197,.55);
+      font-family: inherit; font-size: .7rem; letter-spacing: .05em;
+      cursor: pointer; backdrop-filter: blur(10px);
+      transition: all .3s;
+    }
+    .hud-tool-btn:hover { background: rgba(229,217,197,.1); color: var(--hud-text); }
+    .hud-tool-btn.active { background: rgba(201,169,110,.22); border-color: var(--hud-accent); color: var(--hud-text); }
+
+    /* ═══ Right Overlay Panels (Tour & AI Studio) ═══ */
+    .right-panel {
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 20;
+      width: 360px; max-width: 92vw;
+      background: rgba(10,10,10,.93);
+      border-left: 1px solid var(--hud-border);
+      backdrop-filter: blur(16px);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform .35s cubic-bezier(.4,0,.2,1);
+      padding: 1rem;
+    }
+    .right-panel.open { transform: translateX(0); }
+    .right-panel::-webkit-scrollbar { width: 4px; }
+    .right-panel::-webkit-scrollbar-thumb { background: rgba(229,217,197,.15); border-radius: 2px; }
+
+    .rp-section {
+      background: rgba(229,217,197,.04);
+      border: 1px solid var(--hud-border);
+      border-radius: 12px; padding: .85rem; margin-bottom: .65rem;
+    }
+    .rp-section h3 {
+      font-size: .58rem; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--hud-muted); margin-bottom: .5rem;
+    }
+
+    /* ═══ Tour Panel Specific ═══ */
+    #tour-panel .tp-location { font-size: .85rem; font-weight: 600; color: var(--hud-text); letter-spacing: .04em; }
+    #tour-panel .tp-npc { display: flex; align-items: center; gap: 10px; margin: .5rem 0; }
+    #tour-panel .tp-avatar {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: linear-gradient(145deg, #fff2d0, #b96c2d);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; font-weight: 800; color: #3b210f; flex-shrink: 0;
+    }
+    #tour-panel .tp-npc-name { font-size: .8rem; color: var(--hud-text); font-weight: 600; }
+    #tour-panel .tp-npc-role { font-size: .65rem; color: var(--hud-muted); }
+    #tour-panel .tp-objective {
+      color: var(--hud-accent); font-size: .72rem;
+      padding: .5rem .6rem;
+      background: rgba(201,169,110,.08);
+      border-left: 2px solid var(--hud-accent);
+      border-radius: 0 6px 6px 0; margin: .5rem 0;
+    }
+    #tour-panel .tp-accuracy { font-size: .65rem; color: var(--hud-muted); font-style: italic; margin-top: .3rem; }
+    #tour-panel .tp-step { font-size: .68rem; color: var(--hud-muted); margin-bottom: .4rem; }
+    #tour-panel .tp-progress {
+      height: 4px; border-radius: 2px;
+      background: rgba(229,217,197,.1); margin: .5rem 0; overflow: hidden;
+    }
+    #tour-panel .tp-progress-fill { height: 100%; border-radius: inherit; background: var(--hud-accent); transition: width .3s ease; }
+    .tp-badges { display: flex; flex-wrap: wrap; gap: 4px; margin: .4rem 0; }
+    .tp-badge {
+      font-size: .58rem; font-weight: 700; letter-spacing: .04em;
+      padding: 3px 8px; border-radius: 999px; text-transform: uppercase;
+    }
+    .tp-badge.source { background: rgba(49,95,43,.3); color: #8fbc8f; border: 1px solid rgba(49,95,43,.5); }
+    .tp-badge.reconstructed { background: rgba(118,81,18,.3); color: #e2c87a; border: 1px solid rgba(118,81,18,.5); }
+    .tp-badge.speculative { background: rgba(138,47,26,.3); color: #e8a090; border: 1px solid rgba(138,47,26,.5); }
+    .tp-badge.review { background: rgba(90,52,118,.3); color: #c4a8dc; border: 1px solid rgba(90,52,118,.5); }
+    .tp-choices { display: flex; flex-direction: column; gap: 5px; margin-top: .5rem; }
+    .tp-choices button {
+      width: 100%; padding: .45rem .7rem;
+      background: rgba(229,217,197,.04);
+      border: 1px solid var(--hud-border); border-radius: 8px;
+      color: var(--hud-text); font-family: inherit;
+      font-size: .7rem; cursor: pointer; transition: all .2s; text-align: left;
+    }
+    .tp-choices button:hover { background: rgba(201,169,110,.15); border-color: var(--hud-accent); }
+    .tp-transcript {
+      list-style: none; font-size: .65rem; color: var(--hud-muted);
+      max-height: 120px; overflow-y: auto;
+    }
+    .tp-transcript li { padding: .25rem 0; border-bottom: 1px solid rgba(229,217,197,.05); }
+    .tp-transcript li strong { color: var(--hud-text); }
+
+    /* ═══ AI Studio Panel Specific ═══ */
+    #ai-studio-panel { z-index: 21; }
+
+    .ai-tabs {
+      display: flex; gap: 2px;
+      background: rgba(229,217,197,.04);
+      border-radius: 10px; padding: 3px; margin-bottom: .8rem;
+    }
+    .ai-tab {
+      flex: 1; padding: .45rem .4rem;
+      background: transparent; border: 0;
+      border-radius: 8px;
+      color: var(--hud-muted); font-family: inherit;
+      font-size: .6rem; font-weight: 600; letter-spacing: .04em;
+      cursor: pointer; transition: all .25s;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .ai-tab .tab-icon { font-size: .85rem; }
+    .ai-tab:hover { color: var(--hud-text); background: rgba(229,217,197,.05); }
+    .ai-tab.active {
+      background: rgba(201,169,110,.18);
+      color: var(--hud-text);
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+
+    .ai-tab-content { display: none; }
+    .ai-tab-content.active { display: block; }
+
+    /* ═══ Usage Counter Bar ═══ */
+    #ai-usage-bar {
+      background: rgba(229,217,197,.05);
+      border: 1px solid var(--hud-border);
+      border-radius: 10px; padding: .55rem .75rem;
+      margin-bottom: .65rem; font-size: .68rem;
+      color: var(--hud-muted);
+    }
+    #ai-usage-bar .usage-text { margin-bottom: .25rem; display: flex; justify-content: space-between; }
+    #ai-usage-bar .usage-track {
+      height: 5px; background: rgba(229,217,197,.08);
+      border-radius: 3px; overflow: hidden;
+    }
+    #ai-usage-bar .usage-fill {
+      height: 100%; border-radius: inherit;
+      background: var(--hud-accent); transition: width .3s;
+    }
+    #ai-usage-bar.exhausted .usage-fill { background: #d97a5a; }
+    #ai-usage-bar.exhausted .usage-count { color: #d97a5a; }
+
+    /* ═══ Upgrade Overlay ═══ */
+    #upgrade-overlay {
+      display: none; margin-bottom: .65rem;
+    }
+    #upgrade-overlay.show { display: block; }
+
+    .upgrade-card {
+      background: rgba(201,169,110,.06);
+      border: 1px solid var(--hud-accent);
+      border-radius: 12px; padding: .85rem;
+      text-align: center; margin-bottom: .5rem;
+    }
+    .upgrade-card h4 {
+      font-size: .85rem; color: var(--hud-text); margin-bottom: .15rem;
+    }
+    .upgrade-card .price {
+      font-size: 1.3rem; font-weight: 700; color: var(--hud-accent);
+      margin: .3rem 0;
+    }
+    .upgrade-card .price small { font-size: .6rem; color: var(--hud-muted); font-weight: 400; }
+    .upgrade-card .features {
+      font-size: .6rem; color: var(--hud-muted); margin: .3rem 0 .5rem;
+    }
+    .upgrade-card .features span { display: block; line-height: 1.6; }
+
+    .pay-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: .4rem; }
+    .pay-option {
+      padding: .5rem .3rem;
+      background: rgba(229,217,197,.04);
+      border: 1px solid var(--hud-border);
+      border-radius: 8px;
+      color: var(--hud-text); font-family: inherit;
+      font-size: .62rem; cursor: pointer; transition: all .2s;
+      text-align: center; text-decoration: none; display: block;
+    }
+    .pay-option:hover { background: rgba(201,169,110,.15); border-color: var(--hud-accent); }
+    .pay-option .pay-icon { font-size: 1rem; display: block; margin-bottom: 2px; }
+
+    /* ═══ Activation Code ═══ */
+    #activation-section {
+      margin-top: .5rem; padding-top: .5rem;
+      border-top: 1px solid var(--hud-border);
+    }
+    #activation-section label {
+      font-size: .6rem; color: var(--hud-muted); display: block; margin-bottom: .25rem;
+    }
+    .activation-row { display: flex; gap: 4px; }
+    .activation-row input {
+      flex: 1; padding: .4rem .5rem;
+      background: rgba(229,217,197,.05);
+      border: 1px solid var(--hud-border);
+      border-radius: 6px; color: var(--hud-text);
+      font-size: .65rem; font-family: monospace; outline: none;
+    }
+    .activation-row input:focus { border-color: var(--hud-accent); }
+    .activation-row button {
+      padding: .4rem .7rem; font-size: .65rem;
+      background: rgba(201,169,110,.18);
+      border: 1px solid var(--hud-accent);
+      border-radius: 6px; color: var(--hud-text);
+      cursor: pointer; font-family: inherit; transition: all .2s;
+    }
+    .activation-row button:hover { background: rgba(201,169,110,.3); }
+    .activation-row button:disabled { opacity: .3; cursor: not-allowed; }
+    #activation-msg { font-size: .6rem; margin-top: .3rem; }
+    #activation-msg.success { color: #8fbc8f; }
+    #activation-msg.error { color: #e8a090; }
+
+    /* Upload zone */
+    .ai-upload-zone {
+      border: 2px dashed rgba(229,217,197,.15);
+      border-radius: 12px;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all .3s;
+      background: rgba(229,217,197,.02);
+      margin-bottom: .5rem;
+    }
+    .ai-upload-zone:hover, .ai-upload-zone.drag-over {
+      border-color: var(--hud-accent);
+      background: rgba(201,169,110,.06);
+    }
+    .ai-upload-zone .upload-icon { font-size: 1.8rem; margin-bottom: .4rem; }
+    .ai-upload-zone .upload-text { font-size: .7rem; color: var(--hud-muted); }
+    .ai-upload-zone .upload-hint { font-size: .6rem; color: rgba(229,217,197,.25); margin-top: .2rem; }
+    .ai-upload-zone input[type="file"] { display: none; }
+
+    /* Preview thumbnail */
+    .ai-preview {
+      position: relative; border-radius: 10px; overflow: hidden;
+      background: rgba(0,0,0,.3); margin-bottom: .5rem;
+      min-height: 80px; display: flex; align-items: center; justify-content: center;
+    }
+    .ai-preview img, .ai-preview video {
+      max-width: 100%; max-height: 200px; object-fit: contain;
+    }
+    .ai-preview .placeholder {
+      font-size: .7rem; color: var(--hud-muted);
+    }
+
+    /* Textarea */
+    .ai-textarea {
+      width: 100%; min-height: 80px;
+      background: rgba(229,217,197,.05);
+      border: 1px solid var(--hud-border);
+      border-radius: 8px; padding: .6rem;
+      color: var(--hud-text); font-family: inherit;
+      font-size: .7rem; resize: vertical; outline: none;
+    }
+    .ai-textarea:focus { border-color: var(--hud-accent); }
+    .ai-textarea::placeholder { color: rgba(229,217,197,.2); }
+
+    /* Select */
+    .ai-select {
+      width: 100%; padding: .45rem .6rem;
+      background: rgba(229,217,197,.04);
+      border: 1px solid var(--hud-border);
+      border-radius: 7px;
+      color: var(--hud-text); font-family: inherit;
+      font-size: .7rem; outline: none; margin-bottom: .5rem;
+    }
+    .ai-select:focus { border-color: var(--hud-accent); }
+    .ai-select option { background: #1a1a1a; color: var(--hud-text); }
+
+    /* Generate button */
+    .ai-generate-btn {
+      width: 100%; padding: .55rem;
+      background: linear-gradient(135deg, rgba(201,169,110,.3), rgba(201,169,110,.15));
+      border: 1px solid var(--hud-accent);
+      border-radius: 8px;
+      color: var(--hud-text); font-family: inherit;
+      font-size: .75rem; font-weight: 600; letter-spacing: .06em;
+      cursor: pointer; transition: all .3s;
+      margin-top: .5rem;
+    }
+    .ai-generate-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, rgba(201,169,110,.45), rgba(201,169,110,.25));
+    }
+    .ai-generate-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+    /* Result area */
+    .ai-result {
+      margin-top: .6rem; padding: .6rem;
+      background: rgba(0,0,0,.3);
+      border-radius: 8px; border: 1px solid var(--hud-border);
+      display: none;
+    }
+    .ai-result.show { display: block; }
+    .ai-result .status-line {
+      font-size: .65rem; display: flex; align-items: center; gap: 6px;
+    }
+    .ai-result .status-line.success { color: #8fbc8f; }
+    .ai-result .status-line.error { color: #e8a090; }
+    .ai-result .status-line.processing { color: var(--hud-accent); }
+    .ai-result .status-detail { font-size: .6rem; color: var(--hud-muted); margin-top: .3rem; }
+    .ai-result .dl-link {
+      display: inline-block; margin-top: .4rem;
+      font-size: .65rem; color: var(--hud-accent);
+      text-decoration: underline; cursor: pointer;
+    }
+
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 14px; height: 14px; border: 2px solid rgba(229,217,197,.2);
+      border-top-color: var(--hud-accent);
+      border-radius: 50%; animation: spin .8s linear infinite;
+      display: inline-block;
+    }
+
+    /* Character param sliders */
+    .ai-params { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: .5rem; }
+    .ai-param label { font-size: .6rem; color: var(--hud-muted); display: block; }
+    .ai-param input[type="range"] { width: 100%; accent-color: var(--hud-accent); }
+    .ai-param .val { font-size: .6rem; color: var(--hud-accent); }
+
+    /* ═══ Route Bar ═══ */
+    #route-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 15;
+      background: linear-gradient(0deg, rgba(0,0,0,.7) 0%, transparent 100%);
+      padding: .6rem 1rem;
+      display: flex; gap: 8px; justify-content: center;
+      overflow-x: auto;
+    }
+    #route-bar::-webkit-scrollbar { height: 2px; }
+    #route-bar::-webkit-scrollbar-thumb { background: rgba(229,217,197,.1); }
+    .route-chip {
+      flex-shrink: 0; padding: .4rem .9rem;
+      background: rgba(229,217,197,.05);
+      border: 1px solid rgba(229,217,197,.1);
+      border-radius: 999px;
+      color: rgba(229,217,197,.45);
+      font-family: inherit; font-size: .68rem; letter-spacing: .04em;
+      cursor: pointer; transition: all .25s; white-space: nowrap;
+    }
+    .route-chip:hover { background: rgba(229,217,197,.1); color: var(--hud-text); }
+    .route-chip.active { background: rgba(201,169,110,.18); border-color: var(--hud-accent); color: var(--hud-text); }
+
+    /* ═══ Character View Panel ═══ */
+    #char-panel {
+      position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
+      width: 230px; z-index: 15; display: flex; flex-direction: column; gap: 8px;
+    }
+    #char-panel.hidden { display: none; }
+    .char-info { text-align: center; padding: .5rem; color: var(--hud-text); }
+    .char-info .name { font-size: .95rem; font-weight: 600; letter-spacing: .08em; }
+    .char-info .motion { font-size: .65rem; color: var(--hud-muted); margin-top: 2px; }
+    .cp-section {
+      background: var(--hud-bg); border: 1px solid var(--hud-border);
+      border-radius: 10px; padding: .55rem .7rem; backdrop-filter: blur(12px);
+    }
+    .cp-section h3 {
+      font-size: .58rem; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--hud-muted); margin-bottom: .35rem;
+    }
+    .cp-presets { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    #cp-switch { grid-template-columns: repeat(3, 1fr); }
+    .cp-presets button {
+      padding: .3rem; font-size: .6rem;
+      background: rgba(229,217,197,.05);
+      border: 1px solid var(--hud-border); border-radius: 6px;
+      color: rgba(229,217,197,.45); cursor: pointer; transition: all .2s; font-family: inherit;
+    }
+    .cp-presets button:hover { background: rgba(229,217,197,.08); color: var(--hud-text); }
+    .cp-presets button.active { background: rgba(201,169,110,.18); border-color: var(--hud-accent); color: var(--hud-text); }
+    .cp-input-row { display: flex; gap: 4px; }
+    .cp-input-row input {
+      flex: 1; background: rgba(229,217,197,.05);
+      border: 1px solid var(--hud-border); border-radius: 6px;
+      padding: .3rem .45rem; color: var(--hud-text);
+      font-size: .6rem; font-family: inherit; outline: none;
+    }
+    .cp-input-row input:focus { border-color: var(--hud-accent); }
+    .cp-input-row input::placeholder { color: rgba(229,217,197,.18); }
+    .cp-input-row button {
+      padding: .3rem .6rem; font-size: .6rem;
+      background: rgba(201,169,110,.18); border: 1px solid var(--hud-accent);
+      border-radius: 6px; color: var(--hud-text); cursor: pointer;
+      font-family: inherit; transition: all .2s;
+    }
+    .cp-input-row button:hover { background: rgba(201,169,110,.3); }
+    .cp-input-row button:disabled { opacity: .25; cursor: not-allowed; }
+
+    /* ═══ Misc ═══ */
+    #scene-loading {
+      position: absolute; bottom: 80px; left: 50%;
+      transform: translateX(-50%);
+      color: rgba(229,217,197,.65);
+      font-size: .75rem; letter-spacing: .04em;
+      opacity: 0; transition: opacity .4s;
+    }
+    #scene-loading.show { opacity: 1; }
+    .hud-hint {
+      position: absolute; bottom: 48px; left: 50%;
+      transform: translateX(-50%);
+      font-size: .6rem; color: rgba(229,217,197,.2);
+      letter-spacing: .06em; white-space: nowrap;
+    }
+    #error-msg {
+      position: fixed; bottom: 50%; left: 50%;
+      transform: translate(-50%, 50%); z-index: 200;
+      background: rgba(180,60,60,.88);
+      color: #f0e0d0; padding: .8rem 1.6rem;
+      border-radius: 8px; font-size: .8rem;
+      text-align: center; display: none;
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(180,60,60,.35);
+    }
+
+    /* ═══ Home Page ═══ */
+    #home-view {
+      position: fixed; inset: 0; z-index: 50;
+      background: #0a0a0a; color: var(--hud-text);
+      overflow-y: auto; display: flex;
+      flex-direction: column; align-items: center;
+      padding: 3rem 1.5rem 4rem;
+    }
+    #home-view.hidden { display: none; }
+    #home-view h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: .15em; margin-bottom: .25rem; }
+    #home-view .subtitle { font-size: .8rem; color: var(--hud-muted); letter-spacing: .1em; margin-bottom: 2.5rem; }
+    .home-section { width: 100%; max-width: 720px; margin-bottom: 2rem; }
+    .home-section h2 {
+      font-size: .85rem; text-transform: uppercase;
+      letter-spacing: .15em; color: rgba(229,217,197,.25);
+      margin-bottom: .75rem; padding-left: .25rem;
+    }
+    .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .home-card {
+      background: rgba(229,217,197,.04);
+      border: 1px solid rgba(229,217,197,.1);
+      border-radius: 12px; padding: 1.25rem 1rem;
+      cursor: pointer; transition: all .3s ease; text-align: center;
+    }
+    .home-card:hover {
+      background: rgba(229,217,197,.08);
+      border-color: rgba(229,217,197,.25); transform: translateY(-2px);
+    }
+    .home-card .icon { font-size: 1.6rem; margin-bottom: .5rem; }
+    .home-card .name { font-size: .9rem; font-weight: 600; margin-bottom: .2rem; }
+    .home-card .desc { font-size: .65rem; color: var(--hud-muted); }
+
+    /* ═══ View Container ═══ */
+    .view-3d { position: fixed; inset: 0; z-index: 10; }
+    .view-3d.hidden { display: none; }
+    .back-btn {
+      position: absolute; top: 16px; left: 16px; z-index: 25;
+      padding: .4rem 1rem; font-size: .72rem;
+      background: rgba(0,0,0,.5); border: 1px solid var(--hud-border);
+      border-radius: 6px; color: rgba(229,217,197,.55);
+      cursor: pointer; backdrop-filter: blur(8px); transition: all .3s;
+    }
+    .back-btn:hover { background: rgba(229,217,197,.1); color: var(--hud-text); }
+
+    /* ═══ Responsive ═══ */
+    @media (max-width: 780px) {
+      .right-panel { width: 100vw; max-width: 100vw; }
+      .scene-btns { bottom: 90px; }
+      .motion-bar { bottom: 52px; }
+      .hud-hint { bottom: 42px; }
+      #route-bar { padding: .4rem .5rem; gap: 4px; }
+      .route-chip { padding: .3rem .6rem; font-size: .6rem; }
+      .hud-toolbar { top: 10px; right: 8px; gap: 4px; }
+      .hud-tool-btn { padding: .35rem .6rem; font-size: .62rem; }
+      #user-area { padding: .35rem; }
+      #user-area .user-name { display: none; }
+    }
+
+    /* ═══ Google Login ═══ */
+    #login-container {
+      position: absolute; top: 16px; right: 20px; z-index: 55;
+    }
+    #login-btn {
+      display: flex; align-items: center; gap: 10px;
+      padding: .55rem 1.2rem;
+      background: #fff; border: 1px solid #dadce0;
+      border-radius: 8px; color: #3c4043;
+      font-family: 'Inter', 'Noto Serif SC', sans-serif;
+      font-size: .8rem; font-weight: 500; letter-spacing: .02em;
+      cursor: pointer; transition: all .25s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    }
+    #login-btn:hover { box-shadow: 0 2px 8px rgba(0,0,0,.15); background: #fafafa; }
+    #login-btn .g-icon { width: 20px; height: 20px; flex-shrink: 0; }
+
+    /* User profile in HUD */
+    #user-area {
+      display: none; align-items: center; gap: 10px;
+      padding: .4rem .8rem;
+      background: rgba(0,0,0,.4); border: 1px solid var(--hud-border);
+      border-radius: 999px; backdrop-filter: blur(8px);
+    }
+    #user-area.logged-in { display: flex; }
+    #user-area .user-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2px solid var(--hud-accent); flex-shrink: 0;
+    }
+    #user-area .user-name {
+      font-size: .7rem; color: var(--hud-text); letter-spacing: .03em;
+    }
+    #user-area .user-logout {
+      font-size: .6rem; color: var(--hud-muted); cursor: pointer;
+      background: none; border: none; padding: 2px 6px;
+    }
+    #user-area .user-logout:hover { color: #e8a090; }
+  
+    #ai-studio-panel { z-index: 999 !important; background: rgba(10,10,10,.97) !important; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ Home Page ═══ -->
+  <div id="home-view">
+    <h1>Giza World</h1>
+    <div class="subtitle">AI 3D Exhibition · Guided Tour</div>
+
+    <!-- Google Login -->
+    <div id="login-container">
+      <button id="login-btn" onclick="document.querySelector('#g_id_signin_target div[role=button]').click()">
+        <svg class="g-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google
+      </button>
+      <div id="g_id_signin_target" style="display:none"></div>
+    </div>
+    <div class="home-section">
+      <h2>Guided Tour</h2>
+      <div class="home-grid" id="tour-cards"></div>
+    </div>
+    <div class="home-section">
+      <h2>AI Studio</h2>
+      <div class="home-grid" id="ai-cards"></div>
+    </div>
+    <div class="home-section">
+      <h2>Scenes</h2>
+      <div class="home-grid" id="scene-cards"></div>
+    </div>
+    <div class="home-section">
+      <h2>Characters</h2>
+      <div class="home-grid" id="char-cards"></div>
+    </div>
+  </div>
+
+  <!-- ═══ 3D View ═══ -->
+  <div id="view-3d" class="view-3d hidden">
+    <button class="back-btn" id="back-btn">← Back</button>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+      <div class="load-title">Giza World · AI 3D Exhibition</div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div id="loading-status">Initializing…</div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="hud-top">
+        <h1>Giza World · AI 3D Exhibition</h1>
+        <p id="hud-subtitle">Scene View</p>
+      </div>
+
+      <!-- Tool buttons (top-right) -->
+      <div class="hud-toolbar">
+        <button class="hud-tool-btn" id="btn-tour" title="Guided Tour">🧭 Tour</button>
+        <button class="hud-tool-btn" id="btn-ai" title="AI Studio">🤖 AI Studio</button>
+        <button class="hud-tool-btn" id="btn-agent" title="Heritage Agent">💬 Agent</button>
+        <div id="user-area">
+          <img class="user-avatar" id="user-avatar" src="" alt="" />
+          <span class="user-name" id="user-name"></span>
+          <button class="user-logout" id="user-logout" title="Sign out">✕</button>
+        </div>
+      </div>
+
+      
+
+      
+
+      
+      
+    </div>
+
+    <!-- ═══ Tour Panel (right overlay) ═══ -->
+    <div class="right-panel" id="tour-panel">
+      <div class="rp-section"><h3>📍 Location</h3><div class="tp-location" id="tp-location">Giza Gallery</div></div>
+      <div class="rp-section">
+        <h3>🗿 Guide</h3>
+        <div class="tp-npc">
+          <div class="tp-avatar" id="tp-avatar">H</div>
+          <div>
+            <div class="tp-npc-name" id="tp-npc-name">Hathor</div>
+            <div class="tp-npc-role" id="tp-npc-role">Cultural guide</div>
+          </div>
+        </div>
+      </div>
+      <div class="rp-section">
+        <h3>📍 Progress</h3>
+        <div class="tp-step" id="tp-step">Stop 1 / 3</div>
+        <div class="tp-progress"><div class="tp-progress-fill" id="tp-progress-fill" style="width:33%"></div></div>
+        <div class="tp-objective" id="tp-objective">Current objective</div>
+        <div class="tp-accuracy" id="tp-accuracy"></div>
+      </div>
+      <div class="rp-section"><h3>🏷️ Certainty</h3><div class="tp-badges" id="tp-badges"></div></div>
+      <div class="rp-section"><h3>🧭 Choices</h3><div class="tp-choices" id="tp-choices"></div></div>
+      <div class="rp-section"><h3>📜 Transcript</h3><ul class="tp-transcript" id="tp-transcript"></ul></div>
+    </div>
+
+    <!-- ═══ AI Studio Panel (right overlay) ═══ -->
+    
+
+
+    <!-- ========== Agent Chat Panel ========== -->
+    <div class="right-panel" id="agent-panel">
+      <div class="agent-welcome" id="agent-welcome">
+        <div class="agent-avatar">&#127968;</div>
+        <h4>Heritage Agent <span id="agent-mode-badge" class="local">local</span></h4>
+        <p>Ask me anything about the Giza collection.<br>Try: "Show me Hathor" or "Tell me about the pyramids"</p>
+      </div>
+      <div class="agent-chips" id="agent-chips">
+        <button class="agent-chip" data-cmd="Show me the Goddess Hathor">&#x1f57a; Hathor</button>
+        <button class="agent-chip" data-cmd="Go to Scene 1">&#x1f3db; Scene 1</button>
+        <button class="agent-chip" data-cmd="Tell me about the Old Kingdom">&#x1f4da; Old Kingdom</button>
+        <button class="agent-chip" data-cmd="Compare Scene 1 and Scene 2">&#x2696; Compare</button>
+        <button class="agent-chip" data-cmd="What materials were used?">&#x1faa8; Materials</button>
+      </div>
+      <div class="agent-messages" id="agent-messages"></div>
+      <div class="agent-typing" id="agent-typing">
+        <span class="td"><span></span><span></span><span></span></span> Thinking...
+      </div>
+      <div class="agent-input-row">
+        <input type="text" id="agent-input" placeholder="Ask Heritage Agent..." />
+        <button id="agent-send">Send</button>
+      </div>
+    </div>
+
+    <!-- Route Bar -->
+    <div id="route-bar"></div>
+
+    <!-- Error -->
+    <div id="error-msg"></div>
+
+    <!-- Character View Panel -->
+    
+<div class="right-panel" id="ai-studio-panel">
+      <!-- Tab bar -->
+      <div class="ai-tabs">
+        <button class="ai-tab active" data-tab="t2m">
+          <span class="tab-icon">✍️</span> Text to Motion
+        </button>
+        <button class="ai-tab" data-tab="i2d">
+          <span class="tab-icon">🖼️</span> 图生3D
+        </button>
+        <button class="ai-tab" data-tab="v2s">
+          <span class="tab-icon">🎬</span> Video to Scene
+        </button>
+      </div>
+
+      <!-- Usage Counter -->
+      <div id="ai-usage-bar">
+        <div class="usage-text">
+          <span>🎯 Free generations</span>
+          <span class="usage-count" id="usage-count">10/10 left</span>
+        </div>
+        <div class="usage-track"><div class="usage-fill" id="usage-fill" style="width:100%"></div></div>
+      </div>
+
+      <!-- Upgrade Panel (shown when exhausted) -->
+      <div id="upgrade-overlay">
+        <div class="upgrade-card">
+          <h4>⭐ Basic</h4>
+          <div class="price">$5<small>/month</small></div>
+          <div class="features">
+            <span>50 generations / month</span>
+            <span>All AI Studio features</span>
+            <span>Email support</span>
+          </div>
+          <div class="pay-options">
+            <a class="pay-option" id="pay-basic-card" href="#" target="_blank" rel="noopener">
+              <span class="pay-icon">💳</span> Card
+            </a>
+            <a class="pay-option" id="pay-basic-alipay" href="#" target="_blank" rel="noopener">
+              <span class="pay-icon">🔵</span> Alipay
+            </a>
+            <a class="pay-option" id="pay-basic-wechat" href="#" target="_blank" rel="noopener">
+              <span class="pay-icon">🟢</span> WeChat
+            </a>
+          </div>
+        </div>
+
+        <div class="upgrade-card">
+          <h4>👑 Pro · Lifetime</h4>
+          <div class="price">$15<small>/once</small></div>
+          <div class="features">
+            <span>Unlimited generations</span>
+            <span>Priority processing</span>
+            <span>Early access to new features</span>
+          </div>
+          <div class="pay-options">
+            <a class="pay-option" id="pay-pro-card" href="#" target="_blank" rel="noopener">
+              <span class="pay-icon">💳</span> Card
+            </a>
+            <a class="pay-option" id="pay-pro-alipay" href="#" target="_blank" rel="noopener">
+              <span class="pay-icon">🔵</span> Alipay
+            </a>
+            <a class="pay-option" id="pay-pro-wechat" href="#" target="_blank" rel="noopener">
+              <span class="pay-icon">🟢</span> WeChat
+            </a>
+          </div>
+        </div>
+
+        <!-- Activation Code -->
+        <div id="activation-section">
+          <label>Already paid? Enter your activation code:</label>
+          <div class="activation-row">
+            <input type="text" id="activation-input" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19" />
+            <button id="activation-btn">Activate</button>
+          </div>
+          <div id="activation-msg"></div>
+        </div>
+      </div>
+          <span class="tab-icon">🎬</span> Video to Scene
+        </button>
+      </div>
+
+      <!-- Tab 1: Text → Motion -->
+      <div class="ai-tab-content active" id="tab-t2m">
+        <div class="rp-section">
+          <h3>🎯 Target Character</h3>
+          <select class="ai-select" id="ai-t2m-char">
+            <option value="0">The Goddess Hathor</option>
+            <option value="1">King Menkaure</option>
+            <option value="2">Ranefer</option>
+          </select>
+        </div>
+        <div class="rp-section">
+          <h3>📝 Motion Description</h3>
+          <textarea class="ai-textarea" id="ai-t2m-prompt"
+            placeholder="Describe the motion you want, e.g.: The goddess slowly raises her right arm, palm facing upward, then steps forward gracefully..."></textarea>
+        </div>
+        <div class="rp-section">
+          <h3>⚙️ Parameters</h3>
+          <div class="ai-params">
+            <div class="ai-param">
+              <label>Duration <span class="val" id="ai-t2m-dur-val">3.0s</span></label>
+              <input type="range" id="ai-t2m-dur" min="1" max="10" step="0.5" value="3">
+            </div>
+            <div class="ai-param">
+              <label>Intensity <span class="val" id="ai-t2m-int-val">0.7</span></label>
+              <input type="range" id="ai-t2m-int" min="0.1" max="1" step="0.1" value="0.7">
+            </div>
+          </div>
+        </div>
+        <button class="ai-generate-btn" id="ai-t2m-generate">
+          ⚡ Generate Motion
+        </button>
+        <div class="ai-result" id="ai-t2m-result">
+          <div class="status-line" id="ai-t2m-status"></div>
+          <div class="status-detail" id="ai-t2m-detail"></div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Image → 3D -->
+      <div class="ai-tab-content" id="tab-i2d">
+        <div class="rp-section">
+          <h3>📷 Upload Image</h3>
+          <div class="ai-upload-zone" id="ai-i2d-upload">
+            <div class="upload-icon">🖼️</div>
+            <div class="upload-text">Click or drag image here</div>
+            <div class="upload-hint">PNG, JPG, WEBP · Max 10MB</div>
+            <input type="file" id="ai-i2d-file" accept="image/png,image/jpeg,image/webp">
+          </div>
+          <div class="ai-preview" id="ai-i2d-preview">
+            <span class="placeholder">No image selected</span>
+          </div>
+        </div>
+        <div class="rp-section">
+          <h3>⚙️ Model Quality</h3>
+          <select class="ai-select" id="ai-i2d-quality">
+            <option value="standard">Standard (fast)</option>
+            <option value="high" selected>High Quality</option>
+            <option value="ultra">Ultra (slow)</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.65rem;color:var(--hud-muted);cursor:pointer;margin-top:.3rem;">
+            <input type="checkbox" id="ai-i2d-rig" checked> Auto-rig for animation
+          </label>
+        </div>
+        <button class="ai-generate-btn" id="ai-i2d-generate" disabled>
+          🔮 Generate 3D Model
+        </button>
+        <div class="ai-result" id="ai-i2d-result">
+          <div class="status-line" id="ai-i2d-status"></div>
+          <div class="status-detail" id="ai-i2d-detail"></div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Video → 3D Scene -->
+      <div class="ai-tab-content" id="tab-v2s">
+        <div class="rp-section">
+          <h3>🎬 Upload Video</h3>
+          <div class="ai-upload-zone" id="ai-v2s-upload">
+            <div class="upload-icon">🎥</div>
+            <div class="upload-text">Click or drag video here</div>
+            <div class="upload-hint">MP4, MOV, WEBM · Max 200MB · Recommended &lt;30s</div>
+            <input type="file" id="ai-v2s-file" accept="video/mp4,video/quicktime,video/webm">
+          </div>
+          <div class="ai-preview" id="ai-v2s-preview">
+            <span class="placeholder">No video selected</span>
+          </div>
+        </div>
+        <div class="rp-section">
+          <h3>⚙️ Extraction Settings</h3>
+          <div class="ai-params">
+            <div class="ai-param">
+              <label>FPS Sampling <span class="val" id="ai-v2s-fps-val">4</span></label>
+              <input type="range" id="ai-v2s-fps" min="1" max="30" step="1" value="4">
+            </div>
+            <div class="ai-param">
+              <label>Quality <span class="val" id="ai-v2s-qual-val">high</span></label>
+              <input type="range" id="ai-v2s-qual" min="1" max="3" step="1" value="2">
+            </div>
+          </div>
+          <select class="ai-select" id="ai-v2s-format">
+            <option value="ply">PLY (Gaussian Splatting)</option>
+            <option value="spz">SPZ (Compressed)</option>
+            <option value="glb">GLB Mesh</option>
+          </select>
+        </div>
+        <button class="ai-generate-btn" id="ai-v2s-generate" disabled>
+          🌐 Generate 3D Scene
+        </button>
+        <div class="ai-result" id="ai-v2s-result">
+          <div class="status-line" id="ai-v2s-status"></div>
+          <div class="status-detail" id="ai-v2s-detail"></div>
+        </div>
+      </div>
+    </div>
+
+  <!-- ═══ Google Sign-In Handler (global scope, required by GIS) ═══ -->
+  <script>
+    // ═══════════════════════════════════════
+    // Google Identity Services Auth
+    // ═══════════════════════════════════════
+
+    const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+
+    // Auth state — shared with main module via window
+    window._gizaAuth = {
+      isLoggedIn: false,
+      user: null,
+      credential: null,
+    };
+
+    // Restore session from localStorage
+    (function restoreSession() {
+      try {
+        const saved = localStorage.getItem('giza_google_user');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.email && parsed.name) {
+            window._gizaAuth.isLoggedIn = true;
+            window._gizaAuth.user = parsed;
+            console.log('[Auth] Session restored:', parsed.email);
+          }
+        }
+      } catch (e) { /* ignore */ }
+    })();
+
+    // GIS callback — called after successful Google sign-in
+    function onGoogleSignIn(response) {
+      try {
+        const payload = parseJWT(response.credential);
+        console.log('[Auth] Google Sign-In success:', payload.email);
+
+        const user = {
+          email: payload.email,
+          name: payload.name,
+          picture: payload.picture,
+          given_name: payload.given_name,
+          family_name: payload.family_name,
+        };
+
+        window._gizaAuth.isLoggedIn = true;
+        window._gizaAuth.user = user;
+        window._gizaAuth.credential = response.credential;
+
+        // Persist session
+        localStorage.setItem('giza_google_user', JSON.stringify(user));
+
+        // Update UI
+        updateAuthUI();
+
+        // Notify main module
+        window.dispatchEvent(new CustomEvent('giza-auth-change', {
+          detail: { loggedIn: true, user }
+        }));
+      } catch (e) {
+        console.error('[Auth] Sign-in error:', e);
+      }
+    }
+
+    // Decode JWT payload (Google credential is a JWT)
+    function parseJWT(token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+      );
+      return JSON.parse(jsonPayload);
+    }
+
+    // Update UI based on login state
+    function updateAuthUI() {
+      const auth = window._gizaAuth;
+      const loginBtn = document.getElementById('login-btn');
+      const userArea = document.getElementById('user-area');
+
+      if (auth.isLoggedIn && auth.user) {
+        // Hide login button on home page
+        if (loginBtn) loginBtn.style.display = 'none';
+        // Show user in HUD
+        if (userArea) {
+          userArea.classList.add('logged-in');
+          document.getElementById('user-avatar').src = auth.user.picture || '';
+          document.getElementById('user-name').textContent = auth.user.given_name || auth.user.name;
+        }
+      } else {
+        if (loginBtn) loginBtn.style.display = '';
+        if (userArea) userArea.classList.remove('logged-in');
+      }
+    }
+
+    // Logout
+    function googleLogout() {
+      window._gizaAuth.isLoggedIn = false;
+      window._gizaAuth.user = null;
+      window._gizaAuth.credential = null;
+      localStorage.removeItem('giza_google_user');
+
+      // Also revoke Google session if google.accounts is available
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.disableAutoSelect();
+      }
+
+      updateAuthUI();
+      window.dispatchEvent(new CustomEvent('giza-auth-change', {
+        detail: { loggedIn: false, user: null }
+      }));
+      console.log('[Auth] Logged out');
+    }
+
+    // Initialize: run when GIS library is ready
+    function initGoogleAuth() {
+      if (!window.google?.accounts?.id) {
+        setTimeout(initGoogleAuth, 200);
+        return;
+      }
+      if (GOOGLE_CLIENT_ID.includes('YOUR_GOOGLE_CLIENT_ID')) {
+        console.log('[Auth] Google Sign-In disabled (no client ID configured)');
+        return;
+      }
+
+      const google = window.google.accounts.id;
+
+      google.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: onGoogleSignIn,
+        auto_select: false,
+        ux_mode: 'popup',
+        itp_support: true,
+      });
+
+      // Also render as a hidden button (our custom button triggers it)
+      google.renderButton(
+        document.getElementById('g_id_signin_target'),
+        { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', logo_alignment: 'left' }
+      );
+
+      console.log('[Auth] Google Identity Services initialized');
+      } catch(e) { console.warn('[Auth] GIS init failed:', e.message); }
+    }
+
+    // Kick off initialization
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        initGoogleAuth();
+        // Wire logout button
+        document.getElementById('user-logout')?.addEventListener('click', googleLogout);
+        updateAuthUI();
+      });
+    } else {
+      initGoogleAuth();
+      document.getElementById('user-logout')?.addEventListener('click', googleLogout);
+      updateAuthUI();
+    }
+  </script>
+
+  <!-- ═══ Import Map ═══ -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+      "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/2.1.0/spark.module.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { SparkRenderer, SplatMesh } from '@sparkjsdev/spark';
+    import { DragControls } from 'three/addons/controls/DragControls.js';
+
+    /* ═══════════════════════════════════════════
+       PART 1: CONFIGURATION
+       ═══════════════════════════════════════════ */
+
+    const SCENE_FILES = [
+      'scene/1/2f07d44a6b43046c9d3208f2dd6f4e17.ply',
+      'scene/2/2e184245233163d44ec1ea2692df242b.ply',
+    ];
+
+    const CHAR_FILES = [
+      'motion/1/ancient+egyptian+statue+3d+model (1).glb',
+      'motion/2/ancient+statue+3d+model.glb',
+      'motion/4/stone+statue+3d+model.glb',
+    ];
+
+    const CHAR_NAMES = ['The Goddess Hathor', 'King Menkaure', 'Ranefer'];
+    const CHAR_SHORT_NAMES = ['Hathor', 'Menkaure', 'Ranefer'];
+
+    const CHAR_ANIM_SETS = [null, null, null];
+    function buildAnimSets() {
+      CHAR_ANIM_SETS[0] = [
+        'motion/1/ancient+egyptian+statue+3d+model (1).glb',
+        'motion/1/ancient+egyptian+statue+3d+model (2).glb',
+        'motion/1/ancient+egyptian+statue+3d+model (3).glb',
+        'motion/1/ancient+egyptian+statue+3d+model (4).glb',
+        'motion/1/ancient+egyptian+statue+3d+model (5).glb',
+      ];
+      CHAR_ANIM_SETS[1] = [
+        'motion/2/ancient+statue+3d+model.glb',
+        'motion/2/ancient+statue+3d+model2.glb',
+        'motion/2/ancient+statue+3d+model3.glb',
+        'motion/2/ancient+statue+3d+model4.glb',
+      ];
+      CHAR_ANIM_SETS[2] = [
+        'motion/4/stone+statue+3d+model.glb',
+        'motion/4/stone+statue+3d+model2 (2).glb',
+        'motion/4/stone+statue+3d+model2 (3).glb',
+        'motion/4/stone+statue+3d+model2 (4).glb',
+        'motion/4/stone+statue+3d+model2 (5).glb',
+      ];
+    }
+    buildAnimSets();
+
+    const CHAR_POSITIONS = [
+      [{ p: [-1.2, 0, 1.0], r: Math.PI / 8 }, { p: [ 1.2, 0, 1.0], r: -Math.PI / 8 }],
+      [{ p: [-1.2, 0, 1.0], r: Math.PI / 8 }, { p: [ 1.2, 0, 1.0], r: -Math.PI / 8 }],
+    ];
+
+    const SCENE_CAMERAS = [
+      { pos: [-0.93, 1.69, -3.95], target: [0, 0.8, 0] },
+      { pos: [-2.86, 1.52, 0.78], target: [0, 0.8, 0] },
+    ];
+
+    const SCENE_ROTATIONS = [
+      { x: -Math.PI / 2, y: 0, z: 0 },
+      { x: -Math.PI / 2, y: 0, z: 0 },
+    ];
+
+    /* ═══════════════════════════════════════════
+       PART 2: TripoSR API SERVICE (placeholder)
+       ═══════════════════════════════════════════ */
+
+    const TripoAPI = {
+      // ═══ Configuration ═══
+      baseURL: '',     // TODO: Set your TripoSR API endpoint
+      apiKey: '',      // TODO: Set your API key
+      _pending: 0,
+
+      _headers() {
+        return {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`,
+        };
+      },
+
+      _asyncRequest(endpoint, body, timeoutMs = 120000) {
+        this._pending++;
+        // ═══════════════════════════════════════
+          // TODO: Replace with real TripoSR API call
+          // Expected flow:
+          //   1. POST {endpoint} with {body}
+          //   2. Poll task status until complete
+          //   3. Return result { status, url, metadata }
+          // ═══════════════════════════════════════
+        return new Promise((resolve) => {
+          console.log(`[TripoAPI] POST ${endpoint}`, body);
+          const delay = 2000 + Math.random() * 3000;
+          setTimeout(() => {
+            this._pending--;
+            resolve({
+              ok: true,
+              status: 'completed',
+              taskId: `task_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+              resultURL: null, // Will point to the generated asset
+              metadata: {
+                endpoint,
+                requestedAt: new Date().toISOString(),
+                processingTimeMs: Math.round(delay),
+              },
+            });
+          }, delay);
+        });
+      },
+
+      // ═══ 1. Text → Motion ═══
+      // Input: text description + character ID + params
+      // Output: animation data (GLB with animation clip or motion vector data)
+      async textToMotion({ text, characterId, duration, intensity }) {
+        console.log('[TripoAPI] textToMotion called', { text, characterId, duration, intensity });
+
+        // ═══════════════════════════════════════
+        // TODO: Implement TripoSR text-to-motion
+        //
+        // API Reference (placeholder):
+        //   POST {baseURL}/motion/generate
+        //   Body: {
+        //     prompt: string,         // Motion description
+        //     character_id: string,   // Target character
+        //     duration: number,       // Seconds
+        //     intensity: number,      // 0.0-1.0
+        //   }
+        //   Response: {
+        //     task_id: string,
+        //     status: "processing" | "completed" | "failed",
+        //     result: {
+        //       animation_url: string,  // GLB/FBX with animation
+        //       motion_data_url: string, // Raw motion vectors (optional)
+        //     }
+        //   }
+        // ═══════════════════════════════════════
+
+        return this._asyncRequest('/motion/generate', {
+          prompt: text,
+          character_id: characterId,
+          duration,
+          intensity,
+        });
+      },
+
+      // ═══ 2. Image → 3D Model ═══
+      // Input: image file + quality setting + auto-rig flag
+      // Output: 3D model (GLB) with optional rigging
+      async imageTo3D({ imageFile, quality, autoRig }) {
+        console.log('[TripoAPI] imageTo3D called', {
+          fileName: imageFile?.name,
+          fileSize: imageFile?.size,
+          quality,
+          autoRig,
+        });
+
+        // ═══════════════════════════════════════
+        // TODO: Implement TripoSR image-to-3D
+        //
+        // API Reference (placeholder):
+        //   POST {baseURL}/model/generate
+        //   Body: multipart/form-data
+        //     image: File,
+        //     quality: "standard" | "high" | "ultra",
+        //     auto_rig: boolean,
+        //   Response: {
+        //     task_id: string,
+        //     status: "processing" | "completed" | "failed",
+        //     result: {
+        //       model_url: string,      // GLB/OBJ download URL
+        //       preview_url: string,    // Thumbnail
+        //       polycount: number,
+        //       rigged: boolean,
+        //     }
+        //   }
+        // ═══════════════════════════════════════
+
+        return this._asyncRequest('/model/generate', {
+          image_name: imageFile?.name,
+          image_size: imageFile?.size,
+          quality,
+          auto_rig: autoRig,
+        });
+      },
+
+      // ═══ 3. Video → 3D Scene ═══
+      // Input: video file + FPS sampling + quality + output format
+      // Output: 3D scene (PLY/SPZ/GLB)
+      async videoToScene({ videoFile, fps, quality, outputFormat }) {
+        console.log('[TripoAPI] videoToScene called', {
+          fileName: videoFile?.name,
+          fileSize: videoFile?.size,
+          fps,
+          quality,
+          format: outputFormat,
+        });
+
+        // ═══════════════════════════════════════
+        // TODO: Implement TripoSR video-to-3D-scene
+        //
+        // API Reference (placeholder):
+        //   POST {baseURL}/scene/generate
+        //   Body: multipart/form-data
+        //     video: File,
+        //     fps_sampling: number,
+        //     quality: 1|2|3,
+        //     output_format: "ply" | "spz" | "glb",
+        //   Response: {
+        //     task_id: string,
+        //     status: "processing" | "completed" | "failed",
+        //     result: {
+        //       scene_url: string,       // PLY/SPZ/GLB download URL
+        //       preview_url: string,    // Thumbnail
+        //       frame_count: number,
+        //       point_count: number,
+        //     }
+        //   }
+        // ═══════════════════════════════════════
+
+        return this._asyncRequest('/scene/generate', {
+          video_name: videoFile?.name,
+          video_size: videoFile?.size,
+          fps_sampling: fps,
+          quality,
+          output_format: outputFormat,
+        });
+      },
+
+      getPendingCount() { return this._pending; },
+    };
+
+    /* ═══════════════════════════════════════════
+       PART 2.5: AUTH INTEGRATION (Google Sign-In)
+       ═══════════════════════════════════════════ */
+
+    // Listen for auth state changes from Google Sign-In
+    window.addEventListener('giza-auth-change', (e) => {
+      const { loggedIn, user } = e.detail;
+      if (loggedIn && user) {
+        console.log('[Module] User authenticated:', user.email);
+        // Wire credential into TripoAPI
+        TripoAPI.apiKey = window._gizaAuth?.credential || '';
+        TripoAPI.userEmail = user.email;
+        showError(`Signed in as ${user.email}`);
+      } else {
+        console.log('[Module] User signed out');
+        TripoAPI.apiKey = '';
+        TripoAPI.userEmail = '';
+      }
+    });
+
+    // If session was restored from localStorage, apply it
+    if (window._gizaAuth?.isLoggedIn && window._gizaAuth?.credential) {
+      TripoAPI.apiKey = window._gizaAuth.credential;
+      TripoAPI.userEmail = window._gizaAuth.user?.email || '';
+      console.log('[Module] Session restored for:', TripoAPI.userEmail);
+    }
+
+    /* ═══════════════════════════════════════════
+       PART 3: AI STUDIO PANEL LOGIC
+       ═══════════════════════════════════════════ */
+
+    // Tab switching
+    let currentAITab = 't2m';
+
+    function switchAITab(tabId) {
+      currentAITab = tabId;
+      document.querySelectorAll('.ai-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+      document.querySelectorAll('.ai-tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${tabId}`));
+    }
+
+    document.querySelectorAll('.ai-tab').forEach(tab => {
+      tab.addEventListener('click', () => switchAITab(tab.dataset.tab));
+    });
+
+    // ── File upload helpers ──
+    function setupUploadZone(zoneId, fileInputId, previewId, fileType) {
+      const zone = document.getElementById(zoneId);
+      const input = document.getElementById(fileInputId);
+      const preview = document.getElementById(previewId);
+
+      zone.addEventListener('click', () => input.click());
+
+      zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+      });
+      zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) handleFileSelect(file, input, preview, fileType);
+      });
+
+      input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (file) handleFileSelect(file, input, preview, fileType);
+      });
+
+      return { zone, input, preview };
+    }
+
+    function handleFileSelect(file, input, preview, fileType) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+
+      const url = URL.createObjectURL(file);
+      if (fileType === 'image') {
+        preview.innerHTML = `<img src="${url}" alt="Preview">`;
+      } else if (fileType === 'video') {
+        preview.innerHTML = `<video src="${url}" controls></video>`;
+      }
+      // Enable generate button
+      const btnId = fileType === 'image' ? 'ai-i2d-generate' : 'ai-v2s-generate';
+      document.getElementById(btnId).disabled = false;
+    }
+
+    // ── Result display helpers ──
+    function showAIResult(resultId, statusId, type, message, detail = '') {
+      const result = document.getElementById(resultId);
+      const status = document.getElementById(statusId);
+      result.classList.add('show');
+      status.className = `status-line ${type}`;
+      status.innerHTML = type === 'processing'
+        ? `<span class="spinner"></span> ${message}`
+        : message;
+      document.getElementById(resultId.replace('result', 'detail')).textContent = detail;
+    }
+
+    function hideAIResult(resultId) {
+      document.getElementById(resultId).classList.remove('show');
+    }
+
+    // ── 1. Text-to-Motion handlers ──
+    document.getElementById('ai-t2m-dur').addEventListener('input', function() {
+      document.getElementById('ai-t2m-dur-val').textContent = this.value + '.0s';
+    });
+    document.getElementById('ai-t2m-int').addEventListener('input', function() {
+      document.getElementById('ai-t2m-int-val').textContent = this.value;
+    });
+
+    document.getElementById('ai-t2m-generate').addEventListener('click', async () => {
+      if (!checkUsageAllowed()) return;
+      const btn = document.getElementById('ai-t2m-generate');
+      const charId = document.getElementById('ai-t2m-char').value;
+      const prompt = document.getElementById('ai-t2m-prompt').value.trim();
+      const duration = parseFloat(document.getElementById('ai-t2m-dur').value);
+      const intensity = parseFloat(document.getElementById('ai-t2m-int').value);
+
+      if (!prompt) {
+        showError('Please describe the motion you want');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Processing...';
+      showAIResult('ai-t2m-result', 'ai-t2m-status', 'processing', 'Generating motion from text...');
+
+      try {
+        const result = await TripoAPI.textToMotion({
+          text: prompt,
+          characterId: charId,
+          duration,
+          intensity,
+        });
+
+        if (result.ok) {
+          showAIResult('ai-t2m-result', 'ai-t2m-status', 'success',
+            '✅ Motion generated successfully!',
+            `Task: ${result.taskId} · Time: ${result.metadata.processingTimeMs}ms · Ready to preview on character`
+          );
+          consumeOneUse();
+          // TODO: Apply animation to the 3D character
+        } else {
+          throw new Error('Generation failed');
+        }
+      } catch (e) {
+        showAIResult('ai-t2m-result', 'ai-t2m-status', 'error',
+          '❌ Generation failed',
+          `Error: ${e.message}. Please check API configuration and try again.`
+        );
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '⚡ Generate Motion';
+      }
+    });
+
+    // ── 2. Image-to-3D handlers ──
+    let i2dFile = null;
+    setupUploadZone('ai-i2d-upload', 'ai-i2d-file', 'ai-i2d-preview', 'image');
+
+    document.getElementById('ai-i2d-file').addEventListener('change', function() {
+      i2dFile = this.files[0];
+      document.getElementById('ai-i2d-generate').disabled = !i2dFile;
+    });
+
+    document.getElementById('ai-i2d-generate').addEventListener('click', async () => {
+      if (!checkUsageAllowed()) return;
+      const btn = document.getElementById('ai-i2d-generate');
+      const file = document.getElementById('ai-i2d-file').files[0];
+      const quality = document.getElementById('ai-i2d-quality').value;
+      const autoRig = document.getElementById('ai-i2d-rig').checked;
+
+      if (!file) {
+        showError('Please select an image first');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Processing...';
+      showAIResult('ai-i2d-result', 'ai-i2d-status', 'processing', 'Uploading image & generating 3D model...');
+
+      try {
+        const result = await TripoAPI.imageTo3D({
+          imageFile: file,
+          quality,
+          autoRig,
+        });
+
+        if (result.ok) {
+          showAIResult('ai-i2d-result', 'ai-i2d-status', 'success',
+            '✅ 3D model generated successfully!',
+            `Task: ${result.taskId} · Auto-rigged: ${autoRig} · Ready to load into scene`
+          );
+          consumeOneUse();
+          // TODO: Load generated GLB into the scene
+        } else {
+          throw new Error('Generation failed');
+        }
+      } catch (e) {
+        showAIResult('ai-i2d-result', 'ai-i2d-status', 'error',
+          '❌ Generation failed',
+          `Error: ${e.message}. Please check API configuration and try again.`
+        );
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔮 Generate 3D Model';
+      }
+    });
+
+    // ── 3. Video-to-Scene handlers ──
+    let v2sFile = null;
+    setupUploadZone('ai-v2s-upload', 'ai-v2s-file', 'ai-v2s-preview', 'video');
+
+    document.getElementById('ai-v2s-file').addEventListener('change', function() {
+      v2sFile = this.files[0];
+      document.getElementById('ai-v2s-generate').disabled = !v2sFile;
+    });
+
+    document.getElementById('ai-v2s-fps').addEventListener('input', function() {
+      document.getElementById('ai-v2s-fps-val').textContent = this.value;
+    });
+    document.getElementById('ai-v2s-qual').addEventListener('input', function() {
+      const labels = { '1': 'draft', '2': 'high', '3': 'ultra' };
+      document.getElementById('ai-v2s-qual-val').textContent = labels[this.value];
+    });
+
+    document.getElementById('ai-v2s-generate').addEventListener('click', async () => {
+      if (!checkUsageAllowed()) return;
+      const btn = document.getElementById('ai-v2s-generate');
+      const file = document.getElementById('ai-v2s-file').files[0];
+      const fps = parseInt(document.getElementById('ai-v2s-fps').value);
+      const quality = parseInt(document.getElementById('ai-v2s-qual').value);
+      const format = document.getElementById('ai-v2s-format').value;
+
+      if (!file) {
+        showError('Please select a video first');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Processing...';
+      showAIResult('ai-v2s-result', 'ai-v2s-status', 'processing',
+        `Extracting frames @ ${fps}fps & generating ${format.toUpperCase()} scene...`);
+
+      try {
+        const result = await TripoAPI.videoToScene({
+          videoFile: file,
+          fps,
+          quality,
+          outputFormat: format,
+        });
+
+        if (result.ok) {
+          showAIResult('ai-v2s-result', 'ai-v2s-status', 'success',
+            '✅ 3D scene generated successfully!',
+            `Task: ${result.taskId} · Format: ${format.toUpperCase()} · Ready to load into viewport`
+          );
+          consumeOneUse();
+          // TODO: Load generated scene into SparkRenderer
+        } else {
+          throw new Error('Generation failed');
+        }
+      } catch (e) {
+        showAIResult('ai-v2s-result', 'ai-v2s-status', 'error',
+          '❌ Generation failed',
+          `Error: ${e.message}. Please check API configuration and try again.`
+        );
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🌐 Generate 3D Scene';
+      }
+    });
+
+    /* ═══════════════════════════════════════════
+       PART 3.5: USAGE TRACKING & PAYMENT SYSTEM
+       ═══════════════════════════════════════════ */
+
+    // ═══ Payment Configuration ═══
+    // TODO: Create Stripe Payment Links and paste URLs below
+    const PAYMENT_LINKS = {
+      basic: {
+        card:   '', // Stripe Payment Link for Basic (Card)
+        alipay: '', // Stripe Payment Link for Basic (Alipay)
+        wechat: '', // Stripe Payment Link for Basic (WeChat Pay)
+      },
+      pro: {
+        card:   '', // Stripe Payment Link for Pro Lifetime (Card)
+        alipay: '', // Stripe Payment Link for Pro Lifetime (Alipay)
+        wechat: '', // Stripe Payment Link for Pro Lifetime (WeChat Pay)
+      },
+    };
+
+    // Set payment link hrefs
+    function applyPaymentLinks() {
+      for (const tier of ['basic', 'pro']) {
+        for (const method of ['card', 'alipay', 'wechat']) {
+          const el = document.getElementById(`pay-${tier}-${method}`);
+          if (el && PAYMENT_LINKS[tier][method]) {
+            el.href = PAYMENT_LINKS[tier][method];
+          } else if (el && !PAYMENT_LINKS[tier][method]) {
+            el.addEventListener('click', (e) => {
+              e.preventDefault();
+              showError('Payment link not configured yet. Please check back soon!');
+            });
+          }
+        }
+      }
+    }
+
+    // ═══ Usage Tracking ═══
+    const USAGE_KEY = 'giza_ai_usage';
+    const MAX_FREE = 10;
+
+    let usageState = loadUsageState();
+
+    function loadUsageState() {
+      try {
+        const raw = localStorage.getItem(USAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) { /* ignore */ }
+      return { count: 0, unlimited: false, activatedAt: null, activationCode: null };
+    }
+
+    function saveUsageState() {
+      localStorage.setItem(USAGE_KEY, JSON.stringify(usageState));
+    }
+
+    function getRemainingFree() {
+      return usageState.unlimited ? Infinity : Math.max(0, MAX_FREE - usageState.count);
+    }
+
+    function hasFreeUses() {
+      return usageState.unlimited || usageState.count < MAX_FREE;
+    }
+
+    function consumeOneUse() {
+      if (usageState.unlimited) return true;
+      if (usageState.count >= MAX_FREE) return false;
+      usageState.count++;
+      saveUsageState();
+      updateUsageUI();
+      return true;
+    }
+
+    function updateUsageUI() {
+      const remaining = getRemainingFree();
+      const isUnlimited = usageState.unlimited;
+      const bar = document.getElementById('ai-usage-bar');
+      const countEl = document.getElementById('usage-count');
+      const fillEl = document.getElementById('usage-fill');
+      const upgradeEl = document.getElementById('upgrade-overlay');
+
+      if (isUnlimited) {
+        bar.classList.remove('exhausted');
+        countEl.textContent = '👑 Unlimited (Pro)';
+        fillEl.style.width = '100%';
+        fillEl.style.background = '#8fbc8f';
+        upgradeEl.classList.remove('show');
+      } else if (remaining > 0) {
+        bar.classList.remove('exhausted');
+        countEl.textContent = `${remaining}/${MAX_FREE} left`;
+        fillEl.style.width = `${(remaining / MAX_FREE) * 100}%`;
+        fillEl.style.background = '';
+        upgradeEl.classList.remove('show');
+      } else {
+        bar.classList.add('exhausted');
+        countEl.textContent = '0/10 · Upgrade to continue';
+        fillEl.style.width = '100%';
+        upgradeEl.classList.add('show');
+      }
+    }
+
+    // ═══ Activation Code Verification ═══
+    async function loadActivationCodes() {
+      try {
+        const resp = await fetch('data/activation_codes.json');
+        if (!resp.ok) return [];
+        const data = await resp.json();
+        return data.codes || [];
+      } catch (e) {
+        console.warn('[Usage] Activation codes file not available');
+        return [];
+      }
+    }
+
+    async function verifyActivationCode(input) {
+      const clean = input.replace(/[-\s]/g, '').toUpperCase();
+      if (clean.length < 12) return false;
+
+      // Hash the input with SHA-256
+      const encoder = new TextEncoder();
+      const data = encoder.encode(clean);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // Check against valid codes
+      const validCodes = await loadActivationCodes();
+      return validCodes.some(c => c.hash === hashHex);
+    }
+
+    async function activateCode(input) {
+      const btn = document.getElementById('activation-btn');
+      const msg = document.getElementById('activation-msg');
+      const input_el = document.getElementById('activation-input');
+
+      btn.disabled = true;
+      btn.textContent = '...';
+      msg.className = '';
+      msg.textContent = '';
+
+      try {
+        const valid = await verifyActivationCode(input);
+        if (valid) {
+          usageState.unlimited = true;
+          usageState.activatedAt = new Date().toISOString();
+          usageState.activationCode = input;
+          saveUsageState();
+          updateUsageUI();
+          msg.className = 'success';
+          msg.textContent = 'Activated! Unlimited access unlocked.';
+          input_el.value = '';
+          setTimeout(() => { msg.textContent = ''; }, 5000);
+        } else {
+          msg.className = 'error';
+          msg.textContent = 'Invalid code. Please check and try again, or contact support.';
+        }
+      } catch (e) {
+        msg.className = 'error';
+        msg.textContent = 'Verification failed. Please try again.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Activate';
+      }
+    }
+
+    // Bind activation button
+    document.getElementById('activation-btn').addEventListener('click', () => {
+      const input = document.getElementById('activation-input').value.trim();
+      if (!input) {
+        document.getElementById('activation-msg').className = 'error';
+        document.getElementById('activation-msg').textContent = 'Please enter an activation code.';
+        return;
+      }
+      activateCode(input);
+    });
+    document.getElementById('activation-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('activation-btn').click();
+    });
+
+    // ═══ Guard for AI generation ═══
+    function checkUsageAllowed() {
+      if (!hasFreeUses()) {
+        showError('Free uses exhausted! Upgrade to Pro or enter activation code to continue.');
+        document.getElementById('upgrade-overlay').classList.add('show');
+        return false;
+      }
+      return true;
+    }
+
+    /* ═══════════════════════════════════════════
+       PART 4: TOUR DATA & SYSTEM
+       ═══════════════════════════════════════════ */
+
+    const DATA_PATHS = {
+      characters: 'data/characters.json',
+      objects: 'data/objects.json',
+      stories: 'data/storyMoments.json',
+      scenes: 'data/immersiveScenes.json',
+    };
+
+    const badgeLabels = {
+      source: 'Source-based',
+      reconstructed: 'Reconstructed',
+      speculative: 'Speculative',
+      review: 'Needs review',
+    };
+
+    const tourTranscript = [];
+    let tourState = { activeIndex: 0, data: null };
+
+    function badgeMarkup(badges = []) {
+      return badges.map(b => `<span class="tp-badge ${b}">${badgeLabels[b] || b}</span>`).join('');
+    }
+    function tourCharById(id) { return tourState.data?.characters?.find(c => c.id === id); }
+    function tourObjectById(id) { return tourState.data?.objects?.find(o => o.id === id); }
+    function tourSceneById(id) { return tourState.data?.scenes?.find(s => s.id === id); }
+    function tourStoryIndexById(id) { return tourState.data?.stories?.findIndex(s => s.id === id); }
+
+    function mapStoryToSceneIdx(story) {
+      const sceneId = story.sceneId;
+      if (sceneId === 'giza-gallery') return 0;
+      if (sceneId === 'giza-site') return 1;
+      return 0;
+    }
+
+    function mapCharToIdx(characterId) {
+      if (characterId === 'hathor') return 0;
+      if (characterId === 'menkaure') return 1;
+      if (characterId === 'ranefer') return 2;
+      return 0;
+    }
+
+    async function loadTourData() {
+      const entries = await Promise.all(
+        Object.entries(DATA_PATHS).map(async ([key, path]) => {
+          try {
+            const resp = await fetch(path);
+            return [key, await resp.json()];
+          } catch (e) {
+            console.warn(`Tour data "${key}" not available:`, e.message);
+            return [key, []];
+          }
+        })
+      );
+      return Object.fromEntries(entries);
+    }
+
+    function renderRouteBar() {
+      if (!tourState.data) return;
+      const bar = document.getElementById('route-bar');
+      bar.innerHTML = tourState.data.stories.map((story, i) => {
+        const scene = tourSceneById(story.sceneId);
+        return `<button class="route-chip${i === tourState.activeIndex ? ' active' : ''}" data-route="${i}">
+          ${i + 1}. ${scene?.label || story.location}
+        </button>`;
+      }).join('');
+      bar.querySelectorAll('[data-route]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.dataset.route);
+          renderTour(idx);
+          applyTourTo3D(idx);
+        });
+      });
+    }
+
+    function updateRouteBarActive() {
+      document.querySelectorAll('#route-bar [data-route]').forEach(btn => {
+        btn.classList.toggle('active', Number(btn.dataset.route) === tourState.activeIndex);
+      });
+    }
+
+    function renderTour(index = 0) {
+      if (!tourState.data) return;
+      const stories = tourState.data.stories;
+      if (!stories.length) return;
+
+      const story = stories[index];
+      const character = tourCharById(story.characterId);
+      const object = tourObjectById(character?.objectId);
+      const scene = tourSceneById(story.sceneId);
+
+      tourState.activeIndex = index;
+
+      document.getElementById('tp-location').textContent = scene?.label || story.location;
+      document.getElementById('tp-avatar').textContent = character?.displayName?.charAt(0) || '?';
+      document.getElementById('tp-npc-name').textContent = character?.displayName || story.characterId;
+      document.getElementById('tp-npc-role').textContent = character?.guideRole || '';
+      document.getElementById('tp-step').textContent = `Stop ${index + 1} / ${stories.length}`;
+      document.getElementById('tp-progress-fill').style.width = `${((index + 1) / stories.length) * 100}%`;
+      document.getElementById('tp-objective').textContent = story.objective;
+      document.getElementById('tp-accuracy').textContent = object?.publicUseStatus || '';
+      document.getElementById('tp-badges').innerHTML = badgeMarkup(story.certaintyBadges || []);
+
+      const choicesEl = document.getElementById('tp-choices');
+      choicesEl.innerHTML = (story.userChoice || []).map(choice => {
+        const nextIdx = tourStoryIndexById(choice.nextStoryId);
+        return `<button data-next="${nextIdx >= 0 ? nextIdx : index}">${choice.label}</button>`;
+      }).join('');
+      choicesEl.querySelectorAll('[data-next]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const nextIdx = Number(btn.dataset.next);
+          renderTour(nextIdx);
+          applyTourTo3D(nextIdx);
+        });
+      });
+
+      if (tourTranscript.at(-1) !== story.id) tourTranscript.push(story.id);
+      document.getElementById('tp-transcript').innerHTML = tourTranscript
+        .map((id, i) => `<li><strong>${i + 1}.</strong> ${id.replaceAll('-', ' ')}</li>`).join('');
+
+      document.getElementById('hud-subtitle').textContent = scene?.label || story.location;
+      updateRouteBarActive();
+    }
+
+    /* ═══════════════════════════════════════════
+       PART 5: DOM REFERENCES
+       ═══════════════════════════════════════════ */
+    const overlay   = document.getElementById('loading-overlay');
+    const fillBar   = document.getElementById('progress-fill');
+    const loadStat  = document.getElementById('loading-status');
+    const sceneLoad = document.getElementById('scene-loading');
+    const errMsg    = document.getElementById('error-msg');
+    const homeView  = document.getElementById('home-view');
+    const view3d    = document.getElementById('view-3d');
+    const hudEl     = document.getElementById('hud');
+    const charPanel = document.getElementById('char-panel');
+    const tourPanel = document.getElementById('tour-panel');
+    const aiPanel   = document.getElementById('ai-studio-panel');
+
+    /* ═══════════════════════════════════════════
+       PART 6: HOME PAGE CARDS
+       ═══════════════════════════════════════════ */
+    const NAV_CARDS = [
+      { section: 'scene-cards', type: 'scene', idx: 0, icon: '🏛️', name: 'Scene 1', desc: 'Giza Gallery' },
+      { section: 'scene-cards', type: 'scene', idx: 1, icon: '🏛️', name: 'Scene 2', desc: 'Giza Site' },
+      { section: 'char-cards', type: 'character', idx: 0, icon: '🕺', name: 'The Goddess Hathor', desc: '5 animations' },
+      { section: 'char-cards', type: 'character', idx: 1, icon: '🕺', name: 'King Menkaure', desc: '4 animations' },
+      { section: 'char-cards', type: 'character', idx: 2, icon: '🕺', name: 'Ranefer', desc: '5 animations' },
+      { section: 'tour-cards', type: 'tour', idx: 0, icon: '🧭', name: 'Guided Tour', desc: '3-stop museum journey' },
+      { section: 'ai-cards', type: 'ai', idx: 0, icon: '🤖', name: 'AI Studio', desc: 'Text→Motion · Image→3D · Video→Scene' },
+    ];
+
+    function generateCards() {
+      NAV_CARDS.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'home-card';
+        div.innerHTML = `<div class="icon">${c.icon}</div><div class="name">${c.name}</div>${c.desc ? `<div class="desc">${c.desc}</div>` : ''}`;
+        div.addEventListener('click', () => switchView(c.type, c.idx));
+        document.getElementById(c.section).appendChild(div);
+      });
+    }
+    generateCards();
+
+    /* ═══════════════════════════════════════════
+       PART 7: VIEW STATE MANAGEMENT
+       ═══════════════════════════════════════════ */
+    let currentView = 'home';
+    let loadedScenes = new Set();
+    let loadedChars = false;
+
+    function switchView(type, idx) {
+      if (type === 'home') {
+        currentView = 'home';
+        homeView.classList.remove('hidden');
+        view3d.classList.add('hidden');
+        if(charPanel)charPanel.classList.add('hidden');
+        tourPanel.classList.remove('open');
+        aiPanel.classList.remove('open');
+        return;
+      }
+
+      currentView = type + idx;
+      homeView.classList.add('hidden');
+      view3d.classList.remove('hidden');
+      renderer.domElement.style.display = 'block';
+
+      if (type === 'scene') {
+        hudEl.style.display = '';
+        if(charPanel)charPanel.classList.add('hidden');
+        if (!loadedScenes.has(idx)) loadSceneView(idx);
+        else if (idx !== currentSceneIdx) switchScene(idx);
+      } else if (type === 'character') {
+        hudEl.style.display = 'none';
+        if(charPanel)charPanel.classList.remove('hidden');
+        loadCharacterView(idx);
+      } else if (type === 'tour') {
+        if (!tourState.data) {
+          showError('Tour data not loaded. Please wait or try refreshing.');
+          return;
+        }
+        hudEl.style.display = '';
+        if(charPanel)charPanel.classList.add('hidden');
+        tourPanel.classList.add('open');
+        aiPanel.classList.remove('open');
+        document.getElementById('btn-tour').classList.add('active');
+        const idx = (tourState.activeIndex !== undefined && tourState.data?.stories?.length)
+          ? mapStoryToSceneIdx(tourState.data.stories[tourState.activeIndex]) : 0;
+        if (!loadedScenes.has(idx)) loadSceneView(idx);
+        else if (idx !== currentSceneIdx) switchScene(idx);
+      } else if (type === 'ai') {
+        hudEl.style.display = '';
+        if(charPanel)charPanel.classList.add('hidden');
+        tourPanel.classList.remove('open');
+        aiPanel.classList.add('open');
+        document.getElementById('btn-ai').classList.add('active');
+        const targetScene = 0;
+        if (!loadedScenes.has(targetScene)) loadSceneView(targetScene);
+        else if (targetScene !== currentSceneIdx) switchScene(targetScene);
+      }
+    }
+
+    document.getElementById('back-btn').addEventListener('click', () => switchView('home', 0));
+
+    // HUD toolbar buttons
+    document.getElementById('btn-tour').addEventListener('click', () => {
+      const isOpen = tourPanel.classList.contains('open');
+      if (isOpen) {
+        tourPanel.classList.remove('open');
+        document.getElementById('btn-tour').classList.remove('active');
+      } else {
+        aiPanel.classList.remove('open');
+        document.getElementById('btn-ai').classList.remove('active');
+        tourPanel.classList.add('open');
+        document.getElementById('btn-tour').classList.add('active');
+        if (currentView === 'home') switchView('tour', 0);
+      }
+    });
+
+    document.getElementById('btn-ai').addEventListener('click', () => {
+      const isOpen = aiPanel.classList.contains('open');
+      if (isOpen) {
+        aiPanel.classList.remove('open');
+        document.getElementById('btn-ai').classList.remove('active');
+      } else {
+        tourPanel.classList.remove('open');
+        document.getElementById('btn-tour').classList.remove('active');
+        aiPanel.classList.add('open');
+        document.getElementById('btn-ai').classList.add('active');
+        if (currentView === 'home') switchView('ai', 0);
+      }
+    });
+
+    /* ═══════════════════════════════════════════
+       PART 8: THREE.JS SETUP
+       ═══════════════════════════════════════════ */
+    const scene    = new THREE.Scene();
+    const camera   = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(...SCENE_CAMERAS[0].pos);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.6;
+    document.body.prepend(renderer.domElement);
+
+    const sparkRenderer = new SparkRenderer({
+      renderer, covSplats: true, enable2DGS: true, maxStdDev: 3.5, blurAmount: 0.2,
+    });
+    scene.add(sparkRenderer);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(...SCENE_CAMERAS[0].target);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.minDistance = 1.5;
+    controls.maxDistance = 15;
+    controls.maxPolarAngle = Math.PI / 2.1;
+    controls.update();
+
+    const ambient = new THREE.AmbientLight(0xffffff, 1.2);
+    scene.add(ambient);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
+    dirLight.position.set(5, 10, 7);
+    scene.add(dirLight);
+
+    /* ═══════════════════════════════════════════
+       PART 9: SPLAT SCENE MANAGEMENT
+       ═══════════════════════════════════════════ */
+    let currentSplatMesh = null;
+
+    function loadSplatScene(idx) {
+      return new Promise((resolve) => {
+        if (currentSplatMesh) scene.remove(currentSplatMesh);
+        const mesh = new SplatMesh({
+          url: SCENE_FILES[idx],
+          onProgress: (pct) => setProgress(10 + pct * 30, 'Loading 3D scene...'),
+        });
+        const r = SCENE_ROTATIONS[idx];
+        mesh.rotation.set(r.x, r.y, r.z);
+        scene.add(mesh);
+        currentSplatMesh = mesh;
+        setTimeout(() => resolve(mesh), 2000);
+      });
+    }
+
+    /* ═══════════════════════════════════════════
+       PART 10: CHARACTER MANAGEMENT
+       ═══════════════════════════════════════════ */
+    const gltfLoader = new GLTFLoader();
+    let charModels = [];
+    const charStates = CHAR_NAMES.map(name => ({
+      name, paused: false, mixer: null, action: null, animName: '', extraClips: null,
+    }));
+
+    function setProgress(pct, text) {
+      fillBar.style.width = Math.min(pct, 100) + '%';
+      if (text) loadStat.textContent = text;
+    }
+
+    async function loadCharacters(onProgress) {
+      const total = CHAR_FILES.length;
+      const results = [];
+      for (let i = 0; i < total; i++) {
+        try {
+          const gltf = await new Promise((r, rej) => gltfLoader.load(CHAR_FILES[i], r, undefined, rej));
+          results.push(gltf);
+        } catch (e) { console.warn(`Char ${i} load failed:`, e); results.push(null); }
+        onProgress?.((i + 1) / total, `Loading model ${i + 1}/${total}...`);
+      }
+      return results;
+    }
+
+    const charGroup = new THREE.Group();
+    scene.add(charGroup);
+
+    function clearCharacters() {
+      charStates.forEach(s => { s.mixer = null; s.action = null; s.extraClips = null; });
+      while (charGroup.children.length) charGroup.remove(charGroup.children[0]);
+    }
+
+    function placeCharacters(sceneIdx) {
+      clearCharacters();
+      updateMasterButton();
+      setTimeout(() => updateDragObjects(), 100);
+    }
+
+    function updateCharButton(i) {
+      const btn = document.querySelector(`.char-btn[data-char="${i}"]`);
+      if (!btn) return;
+      const s = charStates[i];
+      if (!s.action) { btn.textContent = `${CHAR_SHORT_NAMES[i]} ✗`; btn.classList.remove('active'); return; }
+      btn.textContent = s.paused ? `${CHAR_SHORT_NAMES[i]} ▶` : `${CHAR_SHORT_NAMES[i]} ⏸`;
+      btn.classList.toggle('active', !s.paused);
+    }
+
+    function updateMasterButton() {
+      const allPaused = charStates.every(s => !s.action || s.paused);
+      const allActive = charStates.some(s => s.action);
+      const btn = document.getElementById('motion-all')||{};
+      if (!allActive) { btn.textContent = '⏸ All'; return; }
+      btn.textContent = allPaused ? '▶ All' : '⏸ All';
+    }
+
+    /* ═══════════════════════════════════════════
+       PART 11: SCENE SWITCHING
+       ═══════════════════════════════════════════ */
+    let currentSceneIdx = -1;
+
+    async function switchScene(idx) {
+      if (idx === currentSceneIdx) return;
+      if(sceneLoad)sceneLoad.classList.add('show');
+      if(sceneLoad)sceneLoad.textContent='Switching scene...';
+      try { await loadSplatScene(idx); } catch (e) {
+        showError(`Scene ${idx + 1} failed to load`);
+        if(sceneLoad)sceneLoad.classList.remove('show'); return;
+      }
+      const cam = SCENE_CAMERAS[idx];
+      camera.position.set(cam.pos[0], cam.pos[1], cam.pos[2]);
+      controls.target.set(cam.target[0], cam.target[1], cam.target[2]);
+      controls.update();
+      placeCharacters(idx);
+      currentSceneIdx = idx;
+      if(sceneLoad)sceneLoad.classList.remove('show');
+      document.querySelectorAll('#scene-btns .hud-btn').forEach(b => b.classList.toggle('active', +b.dataset.idx === idx));
+    }
+
+    function showError(msg) {
+      errMsg.textContent = msg;
+      errMsg.style.display = 'block';
+      setTimeout(() => { errMsg.style.display = 'none'; }, 6000);
+    }
+
+    /* ═══════════════════════════════════════════
+       PART 12: VIEW LOADERS
+       ═══════════════════════════════════════════ */
+    async function loadSceneView(idx) {
+      controls.minDistance = 1.5; controls.maxDistance = 15; controls.maxPolarAngle = Math.PI / 2.1;
+      overlay.classList.remove('hidden'); overlay.style.display = '';
+      setProgress(0, 'Initializing...');
+      await new Promise(r => setTimeout(r, 200));
+      if (!loadedChars) {
+        setProgress(5, 'Loading characters...');
+        charModels = await loadCharacters((ratio, text) => setProgress(5 + ratio * 40, text));
+        loadedChars = true; setProgress(45, 'Characters ready');
+      }
+      setProgress(50, 'Loading 3D scene...');
+      try { await loadSplatScene(idx); } catch (e) { showError('Scene load failed'); }
+      setProgress(80, 'Scene ready');
+      placeCharacters(idx);
+      currentSceneIdx = idx; loadedScenes.add(idx);
+      setProgress(100, 'All ready');
+      await new Promise(r => setTimeout(r, 400));
+      overlay.classList.add('hidden');
+      setTimeout(() => { overlay.style.display = 'none'; }, 900);
+    }
+
+    let charViewIdx = -1;
+
+    async function loadCharacterView(idx) {
+      if (currentSplatMesh) { scene.remove(currentSplatMesh); currentSplatMesh = null; }
+      overlay.classList.remove('hidden'); overlay.style.display = '';
+      setProgress(10, 'Loading...');
+      await new Promise(r => setTimeout(r, 200));
+      if (!loadedChars) {
+        charModels = await loadCharacters((ratio, text) => setProgress(10 + ratio * 50, text));
+        loadedChars = true;
+      }
+      setProgress(70, 'Preparing...');
+      clearCharacters();
+      const model = charModels[idx];
+      if (model) {
+        const handle = new THREE.Mesh(
+          new THREE.BoxGeometry(1.4, 2.2, 1.4),
+          new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+        );
+        handle.position.set(0, 1, 0); handle.rotation.y = -Math.PI / 2;
+        const m = model.scene; m.scale.set(3, 3, 3); m.position.set(0, -1, 0);
+        handle.add(m); charGroup.add(handle);
+        const state = charStates[idx];
+        if (model.animations?.length) {
+          state.mixer = new THREE.AnimationMixer(m);
+          state.action = state.mixer.clipAction(model.animations[0]);
+          state.action.play(); state.paused = false; state.animName = 'Anim 1';
+        }
+        const animFiles = CHAR_ANIM_SETS[idx];
+        if (animFiles) {
+          state.extraClips = [];
+          for (let i = 1; i < animFiles.length; i++) {
+            try {
+              const gltf = await new Promise((r, rej) => gltfLoader.load(animFiles[i], r, undefined, rej));
+              if (gltf.animations?.length) state.extraClips.push(gltf.animations[0]);
+            } catch (e) { console.warn(`Anim ${i} load failed:`, e); }
+          }
+        }
+      }
+      camera.position.set(0, 1.2, 4);
+      controls.target.set(0, 1.2, 0);
+      controls.minDistance = 1; controls.maxDistance = 20; controls.maxPolarAngle = Math.PI;
+      controls.update();
+      charViewIdx = idx;
+      var _cpn=document.getElementById('cp-name');if(_cpn)_cpn.textContent = CHAR_NAMES[idx] || `Char ${idx}`;
+      var _cpm=document.getElementById('cp-motion');if(_cpm)_cpm.textContent = charStates[idx]?.animName || 'Default';
+      setProgress(100, 'Ready');
+      await new Promise(r => setTimeout(r, 300));
+      overlay.classList.add('hidden');
+      setTimeout(() => { overlay.style.display = 'none'; }, 900);
+    }
+
+    /* ═══════════════════════════════════════════
+       PART 13: TOUR → 3D COORDINATION
+       ═══════════════════════════════════════════ */
+    async function applyTourTo3D(storyIndex) {
+      if (!tourState.data) return;
+      const story = tourState.data.stories[storyIndex];
+      if (!story) return;
+      const sceneIdx = mapStoryToSceneIdx(story);
+      if (currentSceneIdx !== sceneIdx) {
+        if (!loadedScenes.has(sceneIdx)) await loadSceneView(sceneIdx);
+        else await switchScene(sceneIdx);
+      }
+      document.getElementById('hud-subtitle').textContent = `${story.motionIcon} ${story.motionPreset}`;
+    }
+
+    /* ═══════════════════════════════════════════
+       PART 14: EVENT BINDINGS
+       ═══════════════════════════════════════════ */
+
+    // Scene buttons
+    document.querySelectorAll('#scene-btns .hud-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = +btn.dataset.idx;
+        if (idx === currentSceneIdx || charModels.length === 0) return;
+        switchScene(idx);
+      });
+    });
+
+    // Motion Play/Pause All
+    var maBtn=document.getElementById('motion-all')||{};if(maBtn)maBtn.addEventListener('click', () => {
+      const allPaused = charStates.every(s => !s.action || s.paused);
+      charStates.forEach(s => { if (s.action) { s.paused = !allPaused; s.action.paused = s.paused; } });
+      updateMasterButton();
+      document.querySelectorAll('.char-btn').forEach((_, i) => updateCharButton(i));
+    });
+
+    // Motion Per-character toggle
+    document.querySelectorAll('.char-btn').forEach(btn=>{if(!btn)return;
+      btn.addEventListener('click', () => {
+        const i = +btn.dataset.char;
+        const s = charStates[i];
+        if (!s.action) return;
+        s.paused = !s.paused; s.action.paused = s.paused;
+        updateCharButton(i); updateMasterButton();
+      });
+    });
+
+    // Drag controls
+    let dragControls = null;
+    function updateDragObjects() {
+      const objects = [];
+      charGroup.children.forEach(c => { if (c.isMesh) objects.push(c); });
+      if (!dragControls) {
+        dragControls = new DragControls(objects, camera, renderer.domElement);
+        dragControls.addEventListener('dragstart', () => { controls.enabled = false; });
+        dragControls.addEventListener('drag', (e) => { e.object.position.z = Math.max(0.8, e.object.position.z); });
+        dragControls.addEventListener('dragend', () => { controls.enabled = true; });
+      } else {
+        while (dragControls.objects.length) dragControls.objects.pop();
+        objects.forEach(o => dragControls.objects.push(o));
+      }
+    }
+
+    // Character panel: switch
+    document.querySelectorAll('#cp-switch button').forEach(btn=>{if(!btn)return;
+      btn.addEventListener('click', () => {
+        const idx = +btn.dataset.idx;
+        if (idx === charViewIdx) return;
+        document.querySelectorAll('#cp-switch button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        switchView('character', idx);
+      });
+    });
+
+    // Character panel: motion presets
+    document.querySelectorAll('#cp-presets button').forEach(btn=>{if(!btn)return;
+      btn.addEventListener('click', () => {
+        const motionIdx = parseInt(btn.dataset.motion) - 1;
+        var _cpm=document.getElementById('cp-motion');if(_cpm)_cpm.textContent = `Anim ${motionIdx + 1}`;
+        document.querySelectorAll('#cp-presets button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const state = charStates[charViewIdx];
+        if (state?.extraClips && state.mixer) {
+          if (motionIdx === 0) {
+            const dc = state.action._clip; state.action.stop();
+            state.action = state.mixer.clipAction(dc); state.action.play();
+          } else {
+            const clip = state.extraClips[motionIdx - 1];
+            if (clip) { state.action.stop(); state.action = state.mixer.clipAction(clip); state.action.play(); }
+          }
+        }
+      });
+    });
+
+    // Character panel: T2M
+    var _t2m=document.getElementById('t2m-go');if(_t2m)_t2m.addEventListener('click',()=>{
+      const prompt = document.getElementById('t2m-input').value.trim();
+      if (!prompt) { showError('Please describe the motion'); return; }
+      console.log(`[T2M] prompt: "${prompt}"`);
+      showError('T2M API coming soon - use AI Studio panel for full experience');
+    });
+    var _t2mi=document.getElementById('t2m-input');if(_t2mi)_t2mi.addEventListener('keydown',(e)=>{
+      if (e.key === 'Enter') document.getElementById('t2m-go').click();
+    });
+
+    // Window resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    /* ═══════════════════════════════════════════
+       PART 15: ANIMATION LOOP
+       ═══════════════════════════════════════════ */
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+      charStates.forEach(s => { if (!s.paused && s.mixer) s.mixer.update(dt); });
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    /* ═══════════════════════════════════════════
+       PART 16: INITIALIZATION
+       ═══════════════════════════════════════════ */
+    async function init() {
+      // Initialize usage tracking
+      updateUsageUI();
+      applyPaymentLinks();
+      console.log('[Usage] Tracking active:', usageState.unlimited ? 'Unlimited' : `${getRemainingFree()}/${MAX_FREE} free`);
+
+      setProgress(0, 'Loading tour data...');
+      try {
+        tourState.data = await loadTourData();
+        console.log('[Tour] Data loaded:', Object.keys(tourState.data));
+        renderRouteBar();
+        renderTour(0);
+      } catch (e) {
+        console.warn('[Tour] Data loading failed, tour disabled:', e.message);
+      }
+      await new Promise(r => setTimeout(r, 100));
+      overlay.classList.add('hidden');
+      setTimeout(() => { overlay.style.display = 'none'; }, 500);
+    }
+
+    init().catch(e => {
+      console.error(e);
+      showError('Init failed: ' + e.message);
+      overlay.classList.add('hidden');
+    });
+
+    // Expose TripoAPI for debugging
+    window.TripoAPI = TripoAPI;
+    console.log('[Giza World v3] Ready');
+    console.log('[TripoAPI] Service initialized - 3 API slots reserved:');
+    console.log('  1. TripoAPI.textToMotion({ text, characterId, duration, intensity })');
+    console.log('  2. TripoAPI.imageTo3D({ imageFile, quality, autoRig })');
+    console.log('  3. TripoAPI.videoToScene({ videoFile, fps, quality, outputFormat })');
+    console.log('[TripoAPI] Configure baseURL and apiKey before use.');
+  </script>
+</body>
+</html>
