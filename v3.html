@@ -10,12 +10,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
-    /* Fonts: use system fonts for instant load; Google Fonts loaded async as enhancement */
-    /* Noto Serif SC & Inter loaded non-blocking */
-    @font-face {
-      font-family: 'Noto Serif SC'; font-display: swap;
-      src: local('Noto Serif SC'), local('SimSun'), local('serif');
-    }
+    /* OpenAI-style font stack: clean geometric sans-serif */
+    * { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
     @font-face {
       font-family: 'Inter'; font-display: swap;
       src: local('Inter'), local('Segoe UI'), local('system-ui');
@@ -1230,27 +1226,29 @@
     import { SparkRenderer, SplatMesh } from '@sparkjsdev/spark';
     import { DragControls } from 'three/addons/controls/DragControls.js';
 
-    // ═══ Load external config (base64 encoded, decoded at runtime) ═══
-    try {
-      const configModule = await import('./config.js');
-      if (configModule.AGENT_API_KEY) {
-        const key = atob(configModule.AGENT_API_KEY);
-        if (key.startsWith('sk-')) {
-          HeritageAgent.llmConfig.apiKey = key;
-          HeritageAgent.setMode('llm');
-          console.log('[Config] Agent: LLM mode activated');
+    // Config loader — called after all modules are initialized
+    async function loadExternalConfig() {
+      try {
+        const configModule = await import('./config.js');
+        if (configModule.AGENT_API_KEY) {
+          const key = atob(configModule.AGENT_API_KEY);
+          if (key.startsWith('sk-')) {
+            HeritageAgent.llmConfig.apiKey = key;
+            HeritageAgent.setMode('llm');
+            console.log('[Config] Agent: LLM mode activated');
+          }
         }
-      }
-      if (configModule.TRIPOSR_API_KEY) {
-        const key = atob(configModule.TRIPOSR_API_KEY);
-        if (key.startsWith('tcli_')) {
-          TripoAPI.apiKey = key;
-          console.log('[Config] TripoSR: API key configured');
+        if (configModule.TRIPOSR_API_KEY) {
+          const key = atob(configModule.TRIPOSR_API_KEY);
+          if (key.startsWith('tcli_')) {
+            TripoAPI.apiKey = key;
+            console.log('[Config] TripoSR: API key configured');
+          }
         }
+        console.log('[Config] External config loaded successfully');
+      } catch (e) {
+        console.log('[Config] No config.js — Agent: local mode, AI Studio: demo mode');
       }
-      console.log('[Config] External config loaded successfully');
-    } catch (e) {
-      console.log('[Config] No config.js — Agent: local mode, AI Studio: demo mode');
     }
 
     /* ═══════════════════════════════════════════
@@ -2987,6 +2985,10 @@ Keep responses concise (2-4 sentences) and helpful. Suggest next actions.`;
       // Initialize usage tracking
       updateUsageUI();
       applyPaymentLinks();
+
+      // Load external API keys (base64 decoded)
+      loadExternalConfig();
+
       console.log('[Usage] Tracking active:', usageState.unlimited ? 'Unlimited' : `${getRemainingFree()}/${MAX_FREE} free`);
 
       setProgress(0, 'Loading tour data...');
