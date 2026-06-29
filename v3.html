@@ -1230,6 +1230,21 @@
     import { SparkRenderer, SplatMesh } from '@sparkjsdev/spark';
     import { DragControls } from 'three/addons/controls/DragControls.js';
 
+    // ═══ Load external config (not tracked by git) ═══
+    try {
+      const configModule = await import('./config.js');
+      if (configModule.AGENT_API_KEY) {
+        HeritageAgent.llmConfig.apiKey = configModule.AGENT_API_KEY;
+        HeritageAgent.setMode('llm');
+      }
+      if (configModule.TRIPOSR_API_KEY) {
+        TripoAPI.apiKey = configModule.TRIPOSR_API_KEY;
+      }
+      console.log('[Config] External config loaded');
+    } catch (e) {
+      console.log('[Config] No config.js found — Agent running in local mode, AI Studio in demo mode');
+    }
+
     /* ═══════════════════════════════════════════
        PART 1: CONFIGURATION
        ═══════════════════════════════════════════ */
@@ -1531,11 +1546,11 @@
 
     // ═══ Agent Core ═══
     const HeritageAgent = {
-      mode: 'local', // 'local' | 'llm'
+      mode: 'local',
       llmConfig: {
         apiKey: '',
-        model: 'claude-sonnet-4-20250514',
-        endpoint: 'https://api.anthropic.com/v1/messages',
+        model: 'gpt-4o',
+        endpoint: 'https://api.openai.com/v1/chat/completions',
       },
       history: [],
 
@@ -1599,23 +1614,30 @@ CONTEXT: The user is viewing a 3D Gaussian Splatting scene of Giza. Available ch
 
 Keep responses concise (2-4 sentences) and helpful. Suggest next actions.`;
 
+        const messages = [
+          { role: 'system', content: systemPrompt },
+          ...this.history.slice(-10).map(h => ({
+            role: h.role === 'agent' ? 'assistant' : 'user',
+            content: h.content,
+          })),
+        ];
+
         try {
           const resp = await fetch(this.llmConfig.endpoint, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-api-key': this.llmConfig.apiKey,
-              'anthropic-version': '2023-06-01',
+              'Authorization': `Bearer ${this.llmConfig.apiKey}`,
             },
             body: JSON.stringify({
               model: this.llmConfig.model,
               max_tokens: 300,
-              system: systemPrompt,
-              messages: [...this.history.slice(-10)],
+              messages,
             }),
           });
           const data = await resp.json();
-          return data.content?.[0]?.text || 'I received your message but couldn\'t process it.';
+          if (data.error) throw new Error(data.error.message || 'API error');
+          return data.choices?.[0]?.message?.content || 'I received your message but couldn\'t process it.';
         } catch (e) {
           console.warn('[Agent] LLM call failed, falling back to local:', e.message);
           return await this._localProcess(input);
@@ -1727,8 +1749,8 @@ Keep responses concise (2-4 sentences) and helpful. Suggest next actions.`;
 
     const TripoAPI = {
       // ═══ Configuration ═══
-      baseURL: '',     // TODO: Set your TripoSR API endpoint
-      apiKey: '',      // TODO: Set your API key
+      baseURL: 'https://openapi.tripo3d.ai/v3',
+      apiKey: '', // Set by config.js
       _pending: 0,
 
       _headers() {
