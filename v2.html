@@ -212,6 +212,94 @@
     .ai-tab-content { display: none; }
     .ai-tab-content.active { display: block; }
 
+    /* ═══ Usage Counter Bar ═══ */
+    #ai-usage-bar {
+      background: rgba(229,217,197,.05);
+      border: 1px solid var(--hud-border);
+      border-radius: 10px; padding: .55rem .75rem;
+      margin-bottom: .65rem; font-size: .68rem;
+      color: var(--hud-muted);
+    }
+    #ai-usage-bar .usage-text { margin-bottom: .25rem; display: flex; justify-content: space-between; }
+    #ai-usage-bar .usage-track {
+      height: 5px; background: rgba(229,217,197,.08);
+      border-radius: 3px; overflow: hidden;
+    }
+    #ai-usage-bar .usage-fill {
+      height: 100%; border-radius: inherit;
+      background: var(--hud-accent); transition: width .3s;
+    }
+    #ai-usage-bar.exhausted .usage-fill { background: #d97a5a; }
+    #ai-usage-bar.exhausted .usage-count { color: #d97a5a; }
+
+    /* ═══ Upgrade Overlay ═══ */
+    #upgrade-overlay {
+      display: none; margin-bottom: .65rem;
+    }
+    #upgrade-overlay.show { display: block; }
+
+    .upgrade-card {
+      background: rgba(201,169,110,.06);
+      border: 1px solid var(--hud-accent);
+      border-radius: 12px; padding: .85rem;
+      text-align: center; margin-bottom: .5rem;
+    }
+    .upgrade-card h4 {
+      font-size: .85rem; color: var(--hud-text); margin-bottom: .15rem;
+    }
+    .upgrade-card .price {
+      font-size: 1.3rem; font-weight: 700; color: var(--hud-accent);
+      margin: .3rem 0;
+    }
+    .upgrade-card .price small { font-size: .6rem; color: var(--hud-muted); font-weight: 400; }
+    .upgrade-card .features {
+      font-size: .6rem; color: var(--hud-muted); margin: .3rem 0 .5rem;
+    }
+    .upgrade-card .features span { display: block; line-height: 1.6; }
+
+    .pay-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: .4rem; }
+    .pay-option {
+      padding: .5rem .3rem;
+      background: rgba(229,217,197,.06);
+      border: 1px solid var(--hud-border);
+      border-radius: 8px;
+      color: var(--hud-text); font-family: inherit;
+      font-size: .62rem; cursor: pointer; transition: all .2s;
+      text-align: center; text-decoration: none; display: block;
+    }
+    .pay-option:hover { background: rgba(201,169,110,.15); border-color: var(--hud-accent); }
+    .pay-option .pay-icon { font-size: 1rem; display: block; margin-bottom: 2px; }
+
+    /* ═══ Activation Code ═══ */
+    #activation-section {
+      margin-top: .5rem; padding-top: .5rem;
+      border-top: 1px solid var(--hud-border);
+    }
+    #activation-section label {
+      font-size: .6rem; color: var(--hud-muted); display: block; margin-bottom: .25rem;
+    }
+    .activation-row { display: flex; gap: 4px; }
+    .activation-row input {
+      flex: 1; padding: .4rem .5rem;
+      background: rgba(229,217,197,.05);
+      border: 1px solid var(--hud-border);
+      border-radius: 6px; color: var(--hud-text);
+      font-size: .65rem; font-family: monospace; outline: none;
+    }
+    .activation-row input:focus { border-color: var(--hud-accent); }
+    .activation-row button {
+      padding: .4rem .7rem; font-size: .65rem;
+      background: rgba(201,169,110,.18);
+      border: 1px solid var(--hud-accent);
+      border-radius: 6px; color: var(--hud-text);
+      cursor: pointer; font-family: inherit; transition: all .2s;
+    }
+    .activation-row button:hover { background: rgba(201,169,110,.3); }
+    .activation-row button:disabled { opacity: .3; cursor: not-allowed; }
+    #activation-msg { font-size: .6rem; margin-top: .3rem; }
+    #activation-msg.success { color: #8fbc8f; }
+    #activation-msg.error { color: #e8a090; }
+
     /* Upload zone */
     .ai-upload-zone {
       border: 2px dashed rgba(229,217,197,.15);
@@ -624,6 +712,73 @@
           <span class="tab-icon">🖼️</span> 图生3D
         </button>
         <button class="ai-tab" data-tab="v2s">
+          <span class="tab-icon">🎬</span> 视频转场景
+        </button>
+      </div>
+
+      <!-- Usage Counter -->
+      <div id="ai-usage-bar">
+        <div class="usage-text">
+          <span>🎯 Free generations</span>
+          <span class="usage-count" id="usage-count">10/10 left</span>
+        </div>
+        <div class="usage-track"><div class="usage-fill" id="usage-fill" style="width:100%"></div></div>
+      </div>
+
+      <!-- Upgrade Panel (shown when exhausted) -->
+      <div id="upgrade-overlay">
+        <div class="upgrade-card">
+          <h4>⭐ Basic</h4>
+          <div class="price">$5<small>/month</small></div>
+          <div class="features">
+            <span>50 generations / month</span>
+            <span>All AI Studio features</span>
+            <span>Email support</span>
+          </div>
+          <div class="pay-options">
+            <a class="pay-option" id="pay-basic-card" href="#" target="_blank" rel="noopener">
+              <span class="pay-icon">💳</span> Card
+            </a>
+            <a class="pay-option" id="pay-basic-alipay" href="#" target="_blank" rel="noopener">
+              <span class="pay-icon">🔵</span> Alipay
+            </a>
+            <a class="pay-option" id="pay-basic-wechat" href="#" target="_blank" rel="noopener">
+              <span class="pay-icon">🟢</span> WeChat
+            </a>
+          </div>
+        </div>
+
+        <div class="upgrade-card">
+          <h4>👑 Pro · Lifetime</h4>
+          <div class="price">$15<small>/once</small></div>
+          <div class="features">
+            <span>Unlimited generations</span>
+            <span>Priority processing</span>
+            <span>Early access to new features</span>
+          </div>
+          <div class="pay-options">
+            <a class="pay-option" id="pay-pro-card" href="#" target="_blank" rel="noopener">
+              <span class="pay-icon">💳</span> Card
+            </a>
+            <a class="pay-option" id="pay-pro-alipay" href="#" target="_blank" rel="noopener">
+              <span class="pay-icon">🔵</span> Alipay
+            </a>
+            <a class="pay-option" id="pay-pro-wechat" href="#" target="_blank" rel="noopener">
+              <span class="pay-icon">🟢</span> WeChat
+            </a>
+          </div>
+        </div>
+
+        <!-- Activation Code -->
+        <div id="activation-section">
+          <label>Already paid? Enter your activation code:</label>
+          <div class="activation-row">
+            <input type="text" id="activation-input" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19" />
+            <button id="activation-btn">Activate</button>
+          </div>
+          <div id="activation-msg"></div>
+        </div>
+      </div>
           <span class="tab-icon">🎬</span> 视频转场景
         </button>
       </div>
@@ -1290,6 +1445,7 @@
     });
 
     document.getElementById('ai-t2m-generate').addEventListener('click', async () => {
+      if (!checkUsageAllowed()) return;
       const btn = document.getElementById('ai-t2m-generate');
       const charId = document.getElementById('ai-t2m-char').value;
       const prompt = document.getElementById('ai-t2m-prompt').value.trim();
@@ -1318,6 +1474,8 @@
             '✅ Motion generated successfully!',
             `Task: ${result.taskId} · Time: ${result.metadata.processingTimeMs}ms · Ready to preview on character`
           );
+          consumeOneUse();
+          );
           // TODO: Apply animation to the 3D character
         } else {
           throw new Error('Generation failed');
@@ -1343,6 +1501,7 @@
     });
 
     document.getElementById('ai-i2d-generate').addEventListener('click', async () => {
+      if (!checkUsageAllowed()) return;
       const btn = document.getElementById('ai-i2d-generate');
       const file = document.getElementById('ai-i2d-file').files[0];
       const quality = document.getElementById('ai-i2d-quality').value;
@@ -1368,6 +1527,8 @@
           showAIResult('ai-i2d-result', 'ai-i2d-status', 'success',
             '✅ 3D model generated successfully!',
             `Task: ${result.taskId} · Auto-rigged: ${autoRig} · Ready to load into scene`
+          );
+          consumeOneUse();
           );
           // TODO: Load generated GLB into the scene
         } else {
@@ -1402,6 +1563,7 @@
     });
 
     document.getElementById('ai-v2s-generate').addEventListener('click', async () => {
+      if (!checkUsageAllowed()) return;
       const btn = document.getElementById('ai-v2s-generate');
       const file = document.getElementById('ai-v2s-file').files[0];
       const fps = parseInt(document.getElementById('ai-v2s-fps').value);
@@ -1431,6 +1593,8 @@
             '✅ 3D scene generated successfully!',
             `Task: ${result.taskId} · Format: ${format.toUpperCase()} · Ready to load into viewport`
           );
+          consumeOneUse();
+          );
           // TODO: Load generated scene into SparkRenderer
         } else {
           throw new Error('Generation failed');
@@ -1445,6 +1609,193 @@
         btn.textContent = '🌐 Generate 3D Scene';
       }
     });
+
+    /* ═══════════════════════════════════════════
+       PART 3.5: USAGE TRACKING & PAYMENT SYSTEM
+       ═══════════════════════════════════════════ */
+
+    // ═══ Payment Configuration ═══
+    // TODO: Create Stripe Payment Links and paste URLs below
+    const PAYMENT_LINKS = {
+      basic: {
+        card:   '', // Stripe Payment Link for Basic (Card)
+        alipay: '', // Stripe Payment Link for Basic (Alipay)
+        wechat: '', // Stripe Payment Link for Basic (WeChat Pay)
+      },
+      pro: {
+        card:   '', // Stripe Payment Link for Pro Lifetime (Card)
+        alipay: '', // Stripe Payment Link for Pro Lifetime (Alipay)
+        wechat: '', // Stripe Payment Link for Pro Lifetime (WeChat Pay)
+      },
+    };
+
+    // Set payment link hrefs
+    function applyPaymentLinks() {
+      for (const tier of ['basic', 'pro']) {
+        for (const method of ['card', 'alipay', 'wechat']) {
+          const el = document.getElementById(`pay-${tier}-${method}`);
+          if (el && PAYMENT_LINKS[tier][method]) {
+            el.href = PAYMENT_LINKS[tier][method];
+          } else if (el && !PAYMENT_LINKS[tier][method]) {
+            el.addEventListener('click', (e) => {
+              e.preventDefault();
+              showError('Payment link not configured yet. Please check back soon!');
+            });
+          }
+        }
+      }
+    }
+
+    // ═══ Usage Tracking ═══
+    const USAGE_KEY = 'giza_ai_usage';
+    const MAX_FREE = 10;
+
+    let usageState = loadUsageState();
+
+    function loadUsageState() {
+      try {
+        const raw = localStorage.getItem(USAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) { /* ignore */ }
+      return { count: 0, unlimited: false, activatedAt: null, activationCode: null };
+    }
+
+    function saveUsageState() {
+      localStorage.setItem(USAGE_KEY, JSON.stringify(usageState));
+    }
+
+    function getRemainingFree() {
+      return usageState.unlimited ? Infinity : Math.max(0, MAX_FREE - usageState.count);
+    }
+
+    function hasFreeUses() {
+      return usageState.unlimited || usageState.count < MAX_FREE;
+    }
+
+    function consumeOneUse() {
+      if (usageState.unlimited) return true;
+      if (usageState.count >= MAX_FREE) return false;
+      usageState.count++;
+      saveUsageState();
+      updateUsageUI();
+      return true;
+    }
+
+    function updateUsageUI() {
+      const remaining = getRemainingFree();
+      const isUnlimited = usageState.unlimited;
+      const bar = document.getElementById('ai-usage-bar');
+      const countEl = document.getElementById('usage-count');
+      const fillEl = document.getElementById('usage-fill');
+      const upgradeEl = document.getElementById('upgrade-overlay');
+
+      if (isUnlimited) {
+        bar.classList.remove('exhausted');
+        countEl.textContent = '👑 Unlimited (Pro)';
+        fillEl.style.width = '100%';
+        fillEl.style.background = '#8fbc8f';
+        upgradeEl.classList.remove('show');
+      } else if (remaining > 0) {
+        bar.classList.remove('exhausted');
+        countEl.textContent = `${remaining}/${MAX_FREE} left`;
+        fillEl.style.width = `${(remaining / MAX_FREE) * 100}%`;
+        fillEl.style.background = '';
+        upgradeEl.classList.remove('show');
+      } else {
+        bar.classList.add('exhausted');
+        countEl.textContent = '0/10 · Upgrade to continue';
+        fillEl.style.width = '100%';
+        upgradeEl.classList.add('show');
+      }
+    }
+
+    // ═══ Activation Code Verification ═══
+    async function loadActivationCodes() {
+      try {
+        const resp = await fetch('data/activation_codes.json');
+        if (!resp.ok) return [];
+        const data = await resp.json();
+        return data.codes || [];
+      } catch (e) {
+        console.warn('[Usage] Activation codes file not available');
+        return [];
+      }
+    }
+
+    async function verifyActivationCode(input) {
+      const clean = input.replace(/[-\s]/g, '').toUpperCase();
+      if (clean.length < 12) return false;
+
+      // Hash the input with SHA-256
+      const encoder = new TextEncoder();
+      const data = encoder.encode(clean);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // Check against valid codes
+      const validCodes = await loadActivationCodes();
+      return validCodes.some(c => c.hash === hashHex);
+    }
+
+    async function activateCode(input) {
+      const btn = document.getElementById('activation-btn');
+      const msg = document.getElementById('activation-msg');
+      const input_el = document.getElementById('activation-input');
+
+      btn.disabled = true;
+      btn.textContent = '...';
+      msg.className = '';
+      msg.textContent = '';
+
+      try {
+        const valid = await verifyActivationCode(input);
+        if (valid) {
+          usageState.unlimited = true;
+          usageState.activatedAt = new Date().toISOString();
+          usageState.activationCode = input;
+          saveUsageState();
+          updateUsageUI();
+          msg.className = 'success';
+          msg.textContent = 'Activated! Unlimited access unlocked.';
+          input_el.value = '';
+          setTimeout(() => { msg.textContent = ''; }, 5000);
+        } else {
+          msg.className = 'error';
+          msg.textContent = 'Invalid code. Please check and try again, or contact support.';
+        }
+      } catch (e) {
+        msg.className = 'error';
+        msg.textContent = 'Verification failed. Please try again.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Activate';
+      }
+    }
+
+    // Bind activation button
+    document.getElementById('activation-btn').addEventListener('click', () => {
+      const input = document.getElementById('activation-input').value.trim();
+      if (!input) {
+        document.getElementById('activation-msg').className = 'error';
+        document.getElementById('activation-msg').textContent = 'Please enter an activation code.';
+        return;
+      }
+      activateCode(input);
+    });
+    document.getElementById('activation-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('activation-btn').click();
+    });
+
+    // ═══ Guard for AI generation ═══
+    function checkUsageAllowed() {
+      if (!hasFreeUses()) {
+        showError('Free uses exhausted! Upgrade to Pro or enter activation code to continue.');
+        document.getElementById('upgrade-overlay').classList.add('show');
+        return false;
+      }
+      return true;
+    }
 
     /* ═══════════════════════════════════════════
        PART 4: TOUR DATA & SYSTEM
@@ -2045,6 +2396,11 @@
        PART 16: INITIALIZATION
        ═══════════════════════════════════════════ */
     async function init() {
+      // Initialize usage tracking
+      updateUsageUI();
+      applyPaymentLinks();
+      console.log('[Usage] Tracking active:', usageState.unlimited ? 'Unlimited' : `${getRemainingFree()}/${MAX_FREE} free`);
+
       setProgress(0, 'Loading tour data...');
       try {
         tourState.data = await loadTourData();
