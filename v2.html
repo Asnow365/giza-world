@@ -283,11 +283,11 @@
     }
     .back-btn:hover { background: rgba(229,217,197,.1); color: #e5d9c5; }
 
-    /* ===== Heritage Agent Panel ===== */
+    /* = Heritage Agent Panel = */
     #agent-panel {
       position: fixed; top: 0; right: 0; bottom: 0; z-index: 30;
       width: 380px; max-width: 95vw;
-      background: rgba(10,10,10,.95);
+      background: rgba(10,10,10,.96);
       border-left: 1px solid rgba(229,217,197,.12);
       backdrop-filter: blur(20px);
       display: flex; flex-direction: column;
@@ -295,66 +295,24 @@
       transition: transform .35s cubic-bezier(.4,0,.2,1);
     }
     #agent-panel.open { transform: translateX(0); }
-    #agent-panel .agent-header {
-      padding: .8rem 1rem;
-      border-bottom: 1px solid rgba(229,217,197,.08);
-      display: flex; align-items: center; gap: 8px;
-    }
-    #agent-panel .agent-header .dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: #4ade80; box-shadow: 0 0 8px #4ade80;
-    }
-    #agent-panel .agent-header h3 { color: #e5d9c5; font-size: .85rem; margin: 0; }
-    #agent-panel .agent-header .mode-badge {
-      font-size: .55rem; padding: 2px 8px; border-radius: 999px;
-      background: rgba(74,222,128,.15); color: #4ade80; border: 1px solid rgba(74,222,128,.3);
-    }
-    .agent-msgs {
-      flex: 1; overflow-y: auto; padding: .75rem;
-      display: flex; flex-direction: column; gap: 8px;
-    }
-    .agent-msgs::-webkit-scrollbar { width: 3px; }
-    .agent-msgs::-webkit-scrollbar-thumb { background: rgba(229,217,197,.1); border-radius: 2px; }
-    .amsg {
-      max-width: 92%; padding: .5rem .7rem; border-radius: 12px;
-      font-size: .7rem; line-height: 1.55; animation: msgIn .2s ease;
-    }
-    @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    .amsg.user {
-      align-self: flex-end; background: rgba(201,169,110,.18);
-      border: 1px solid rgba(201,169,110,.25); color: #e5d9c5;
-    }
-    .amsg.agent {
-      align-self: flex-start; background: rgba(229,217,197,.05);
-      border: 1px solid rgba(229,217,197,.08); color: #e5d9c5;
-    }
-    .amsg.agent .alabel {
-      font-size: .55rem; color: #4ade80; font-weight: 700;
-      letter-spacing: .06em; margin-bottom: .25rem;
-    }
-    .agent-input-wrap {
-      padding: .6rem; border-top: 1px solid rgba(229,217,197,.08);
-      display: flex; gap: 6px;
-    }
-    .agent-input-wrap input {
-      flex: 1; padding: .5rem .7rem;
-      background: rgba(229,217,197,.06); border: 1px solid rgba(229,217,197,.1);
-      border-radius: 8px; color: #e5d9c5; font: inherit; font-size: .7rem; outline: none;
-    }
-    .agent-input-wrap input::placeholder { color: rgba(229,217,197,.2); }
-    .agent-input-wrap button {
-      padding: .5rem .9rem; background: rgba(74,222,128,.15);
-      border: 1px solid rgba(74,222,128,.3); border-radius: 8px;
-      color: #4ade80; font: inherit; font-size: .7rem; font-weight: 600; cursor: pointer;
-    }
-    .agent-chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 .75rem .5rem; }
-    .agent-chip {
-      padding: .2rem .55rem; font-size: .58rem;
-      background: rgba(229,217,197,.04); border: 1px solid rgba(229,217,197,.08);
-      border-radius: 999px; color: rgba(229,217,197,.4); cursor: pointer;
-      font: inherit; transition: all .2s;
-    }
-    .agent-chip:hover { background: rgba(201,169,110,.15); color: #e5d9c5; border-color: rgba(201,169,110,.3); }
+    .ahdr { padding: .75rem 1rem; border-bottom: 1px solid rgba(229,217,197,.08); display: flex; align-items: center; gap: 8px; }
+    .ahdr .adot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+    .ahdr h3 { color: #e5d9c5; font-size: .8rem; margin: 0; letter-spacing: .03em; }
+    .amsgs { flex: 1; overflow-y: auto; padding: .75rem; display: flex; flex-direction: column; gap: 8px; }
+    .amsgs::-webkit-scrollbar { width: 3px; }
+    .amsgs::-webkit-scrollbar-thumb { background: rgba(229,217,197,.1); border-radius: 2px; }
+    .amsg { max-width: 92%; padding: .5rem .7rem; border-radius: 12px; font-size: .7rem; line-height: 1.55; animation: ami .2s ease; }
+    @keyframes ami { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .amsg.user { align-self: flex-end; background: rgba(201,169,110,.18); border: 1px solid rgba(201,169,110,.25); color: #e5d9c5; }
+    .amsg.agent { align-self: flex-start; background: rgba(229,217,197,.05); border: 1px solid rgba(229,217,197,.08); color: #e5d9c5; }
+    .amsg.agent .albl { font-size: .55rem; color: #4ade80; font-weight: 700; letter-spacing: .06em; margin-bottom: .25rem; }
+    .ait { padding: .6rem; border-top: 1px solid rgba(229,217,197,.08); display: flex; gap: 6px; }
+    .ait input { flex: 1; padding: .5rem .7rem; background: rgba(229,217,197,.06); border: 1px solid rgba(229,217,197,.1); border-radius: 8px; color: #e5d9c5; font: inherit; font-size: .7rem; outline: none; }
+    .ait input::placeholder { color: rgba(229,217,197,.2); }
+    .ait button { padding: .5rem .9rem; background: rgba(74,222,128,.15); border: 1px solid rgba(74,222,128,.3); border-radius: 8px; color: #4ade80; font: inherit; font-size: .7rem; font-weight: 600; cursor: pointer; }
+    .achps { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 .75rem .5rem; }
+    .achp { padding: .2rem .55rem; font-size: .58rem; background: rgba(229,217,197,.04); border: 1px solid rgba(229,217,197,.08); border-radius: 999px; color: rgba(229,217,197,.4); cursor: pointer; font: inherit; }
+    .achp:hover { background: rgba(201,169,110,.15); color: #e5d9c5; border-color: rgba(201,169,110,.3); }
 
   </style>
 </head>
@@ -378,7 +336,7 @@
 
   <!-- ═══ 3D View ═══ -->
   <div id="view-3d" class="view-3d hidden">
-    <div style="position:absolute;top:14px;right:20px;z-index:25;display:flex;gap:8px;"><button id="btn-agent" style="padding:.4rem .8rem;background:rgba(0,0,0,.5);border:1px solid rgba(229,217,197,.12);border-radius:999px;color:rgba(229,217,197,.55);font:inherit;font-size:.68rem;cursor:pointer;backdrop-filter:blur(8px);">Heritage Agent</button></div>
+    <button id="btn-agent" style="position:absolute;top:14px;right:20px;z-index:25;padding:.4rem .8rem;background:rgba(0,0,0,.5);border:1px solid rgba(229,217,197,.12);border-radius:999px;color:rgba(229,217,197,.55);font:inherit;font-size:.68rem;cursor:pointer;backdrop-filter:blur(8px);">Agent</button>
     <button class="back-btn" id="back-btn">← Back</button>
 
     <!-- ═══ Loading Overlay ═══ -->
@@ -1027,176 +985,122 @@
     });
 
 
-    /* ═══════════════════════════════════
-       HERITAGE AGENT ENGINE
-       ═══════════════════════════════════ */
-
-    // Knowledge Base
+    /* === Heritage Agent Engine === */
     const KB = {
-      sites: {
-        'khufu pyramid': { name:'Great Pyramid of Khufu', dynasty:4, period:'Old Kingdom', location:'Giza', height:'146.6m (originally)', material:'Limestone, granite', built:'c. 2580-2560 BCE', fact:'The only surviving Wonder of the Ancient World. Contains the King's Chamber, Queen's Chamber, and Grand Gallery. Built with ~2.3 million stone blocks.' },
-        'khafre pyramid': { name:'Pyramid of Khafre', dynasty:4, period:'Old Kingdom', location:'Giza', height:'136.4m', material:'Limestone, granite', built:'c. 2570 BCE', fact:'Appears taller than Khufu's due to its elevated location. Retains some of its original limestone casing at the apex.' },
-        'menkaure pyramid': { name:'Pyramid of Menkaure', dynasty:4, period:'Old Kingdom', location:'Giza', height:'65.5m', material:'Limestone, red granite', built:'c. 2510 BCE', fact:'The smallest of the three Giza pyramids. Lower courses were cased in red granite from Aswan.' },
-        'great sphinx': { name:'The Great Sphinx of Giza', dynasty:4, period:'Old Kingdom', location:'Giza', height:'20m, length:73m', material:'Limestone bedrock', built:'c. 2500 BCE', fact:'The largest monolithic statue in the world. Believed to represent Pharaoh Khafre. Its nose was lost sometime before the 15th century.' },
-        'karnak': { name:'Karnak Temple Complex', dynasty:18, period:'New Kingdom', location:'Luxor (Thebes)', type:'Temple complex', built:'c. 2055 BCE - 100 CE', fact:'The largest religious building ever constructed. Dedicated primarily to Amun-Ra. The Hypostyle Hall has 134 massive columns.' },
-        'luxor temple': { name:'Luxor Temple', dynasty:18, period:'New Kingdom', location:'Luxor (Thebes)', type:'Temple', built:'c. 1400 BCE', fact:'Built by Amenhotep III and Ramesses II. Connected to Karnak by the Avenue of Sphinxes. Unlike other temples, it is not dedicated to a god but to the rejuvenation of kingship.' },
-        'hatshepsut temple': { name:'Mortuary Temple of Hatshepsut', dynasty:18, period:'New Kingdom', location:'Deir el-Bahari, Luxor', type:'Mortuary temple', built:'c. 1470 BCE', fact:'One of the most architecturally striking temples in Egypt. Built into a cliff face with three terraced levels. Hatshepsut was one of the few female pharaohs.' },
+      s: {
+        khufu: { n:'Great Pyramid of Khufu', d:4, p:'Old Kingdom', l:'Giza', m:'Limestone, granite', b:'c. 2580 BCE', f:'Only surviving Wonder of the Ancient World. 2.3 million blocks. Contains King\'s Chamber, Queen\'s Chamber, Grand Gallery.' },
+        khafre: { n:'Pyramid of Khafre', d:4, p:'Old Kingdom', l:'Giza', m:'Limestone, granite', b:'c. 2570 BCE', f:'Appears taller than Khufu due to elevated site. Retains limestone casing at apex.' },
+        menkaure: { n:'Pyramid of Menkaure', d:4, p:'Old Kingdom', l:'Giza', m:'Limestone, red granite', b:'c. 2510 BCE', f:'Smallest Giza pyramid. Red granite casing from Aswan on lower courses.' },
+        sphinx: { n:'The Great Sphinx', d:4, p:'Old Kingdom', l:'Giza', m:'Limestone bedrock', b:'c. 2500 BCE', f:'Largest monolithic statue: 73m long, 20m high. Believed to represent Khafre.' },
+        karnak: { n:'Karnak Temple Complex', d:18, p:'New Kingdom', l:'Luxor', t:'Temple complex', b:'c. 2055 BCE', f:'Largest religious building ever. Hypostyle Hall: 134 columns. Dedicated to Amun-Ra.' },
+        luxor: { n:'Luxor Temple', d:18, p:'New Kingdom', l:'Luxor', t:'Temple', b:'c. 1400 BCE', f:'Built by Amenhotep III & Ramesses II. Avenue of Sphinxes to Karnak.' },
+        hatshepsut: { n:'Mortuary Temple of Hatshepsut', d:18, p:'New Kingdom', l:'Deir el-Bahari', t:'Mortuary temple', b:'c. 1470 BCE', f:'Three terraced levels in cliff face. Female pharaoh\'s masterpiece.' },
       },
-      dynasties: {
-        'old kingdom': { period:'c. 2686-2181 BCE', aka:'Age of the Pyramids', capitals:'Memphis', notes:'Egypt's first great period of civilization. Saw the construction of the Giza pyramids, the Great Sphinx, and the development of hieroglyphic writing and centralized government.' },
-        'middle kingdom': { period:'c. 2055-1650 BCE', aka:'Period of Reunification', capitals:'Thebes (Luxor)', notes:'A renaissance period following the First Intermediate Period. Expanded trade, military campaigns into Nubia, and flourishing literature and art.' },
-        'new kingdom': { period:'c. 1550-1069 BCE', aka:'Egyptian Empire', capitals:'Thebes, later Pi-Ramesses', notes:'Egypt's golden age of power and wealth. Famous pharaohs include Hatshepsut, Akhenaten, Tutankhamun, and Ramesses II. Massive temple construction at Karnak and Luxor.' },
-        'dynasty 4': { period:'c. 2613-2494 BCE', pharaohs:'Sneferu, Khufu, Khafre, Menkaure', notes:'The pyramid builders. Sneferu built three pyramids. Khufu built the Great Pyramid. This dynasty perfected pyramid construction.' },
-        'dynasty 5': { period:'c. 2494-2345 BCE', pharaohs:'Userkaf, Sahure, Neferirkare, Nyuserre', notes:'Shift toward solar temples. Smaller pyramids but more elaborate decoration. The Pyramid Texts first appeared.' },
-        'dynasty 18': { period:'c. 1550-1292 BCE', pharaohs:'Ahmose I, Hatshepsut, Thutmose III, Amenhotep III, Akhenaten, Tutankhamun', notes:'Egypt's most famous dynasty. Expulsion of the Hyksos, imperial expansion, Amarna period religious revolution, and the boy king Tutankhamun.' },
+      d: {
+        'old kingdom': { per:'c. 2686-2181 BCE', aka:'Age of Pyramids', n:'First great civilization period. Giza pyramids, Sphinx, hieroglyphic writing.' },
+        'middle kingdom': { per:'c. 2055-1650 BCE', aka:'Reunification', n:'Renaissance after chaos. Expanded trade, military into Nubia.' },
+        'new kingdom': { per:'c. 1550-1069 BCE', aka:'Egyptian Empire', n:'Golden age. Hatshepsut, Tutankhamun, Ramesses II. Massive temples.' },
+        'dynasty 4': { per:'c. 2613-2494 BCE', n:'Pyramid builders: Sneferu, Khufu, Khafre, Menkaure. Perfected pyramid construction.' },
+        'dynasty 5': { per:'c. 2494-2345 BCE', n:'Solar temples. Smaller pyramids, elaborate decoration. Pyramid Texts.' },
+        'dynasty 18': { per:'c. 1550-1292 BCE', n:'Most famous dynasty. Hatshepsut, Thutmose III, Akhenaten, Tutankhamun.' },
       },
-      materials: {
-        'limestone': 'The most common building stone. Quarried locally at Giza. Relatively soft and easy to cut. Used for pyramid core blocks and casing (when finely cut).',
-        'granite': 'Extremely hard igneous rock imported 800km from Aswan. Used for sarcophagi, burial chambers, obelisks, and pyramid casing. Required copper saws with abrasive sand to cut.',
-        'sandstone': 'Used extensively in New Kingdom temples at Luxor and Karnak. Easier to carve than granite. Often painted with vibrant colors.',
-        'greywacke': 'A hard, fine-grained dark stone. Prized for royal statues. The famous Menkaure triad statues in the Museum of Fine Arts Boston are carved from greywacke.',
+      m: {
+        limestone: 'Most common stone. Quarried locally. Used for pyramid cores and casing.',
+        granite: 'Hard rock from Aswan (800km away). Sarcophagi, obelisks, burial chambers.',
+        sandstone: 'New Kingdom temples. Easy to carve. Often brightly painted.',
+        greywacke: 'Dark hard stone. Prized for statues. Menkaure triad is greywacke.',
       },
-      people: {
-        'khufu': { name:'Khufu (Cheops)', role:'Pharaoh', dynasty:4, period:'Old Kingdom', fact:'Builder of the Great Pyramid. Little is known about his reign beyond the pyramid itself. The only surviving statue of him is a tiny 7.5cm ivory figurine.' },
-        'hatshepsut': { name:'Hatshepsut', role:'Pharaoh (female)', dynasty:18, period:'New Kingdom', fact:'One of Egypt's most successful pharaohs. Reigned for ~22 years. Her mortuary temple at Deir el-Bahari is a masterpiece. Often depicted with a false beard and male regalia.' },
-        'ramesses ii': { name:'Ramesses II (the Great)', role:'Pharaoh', dynasty:19, period:'New Kingdom', fact:'Reigned 66 years. Built more monuments than any other pharaoh. Famous for the Battle of Kadesh and the Abu Simbel temples. Father of over 100 children.' },
-      },
-    };
-
-    // Intent Detection
-    function detectIntent(text) {
-      const t = text.toLowerCase();
-      if (/show me|go to|navigate|open|display|take me/i.test(t)) {
-        for (const [key, val] of Object.entries(KB.sites)) {
-          if (t.includes(key) || t.includes(val.name.toLowerCase())) return { name:'navigate', site:key };
-        }
-        if (/scene/i.test(t) || /pyramid/i.test(t)) return { name:'navigate', site:'khufu pyramid' };
-      }
-      if (/compare|versus|vs\.?|difference|contrast/i.test(t)) {
-        const found = Object.keys(KB.sites).filter(k => t.includes(k) || t.includes(KB.sites[k].name.toLowerCase()));
-        if (found.length >= 2) return { name:'compare', sites:found.slice(0,2) };
-        const dyns = Object.keys(KB.dynasties).filter(k => t.includes(k));
-        if (dyns.length >= 2) return { name:'compare_dynasties', dynasties:dyns.slice(0,2) };
-      }
-      if (/tell me|what is|who is|describe|explain|information|know about/i.test(t)) {
-        for (const [key] of Object.entries(KB.sites)) { if (t.includes(key)) return { name:'search', type:'site', id:key }; }
-        for (const [key] of Object.entries(KB.dynasties)) { if (t.includes(key)) return { name:'search', type:'dynasty', id:key }; }
-        for (const [key] of Object.entries(KB.materials)) { if (t.includes(key)) return { name:'search', type:'material', id:key }; }
-        for (const [key] of Object.entries(KB.people)) { if (t.includes(key)) return { name:'search', type:'person', id:key }; }
-      }
-      if (/list|all sites|all pyramids|temples/i.test(t)) {
-        if (/18th|eighteenth|18 dynasty/i.test(t)) return { name:'list', filter:'dyn18' };
-        return { name:'list', filter:'all' };
-      }
-      if (/export|save|download|report|pdf/i.test(t)) return { name:'export' };
-      if (/^(hi|hello|hey|greetings)/i.test(t)) return { name:'greet' };
-      if (/help|what can you do/i.test(t)) return { name:'help' };
-      // Default: search the knowledge base broadly
-      return { name:'search', type:'general', query:t };
-    }
-
-    // Tool Executor
-    const Tools = {
-      navigate(intent) {
-        const site = KB.sites[intent.site];
-        if (!site) return 'Site not found. Try: "Show me the Great Pyramid" or "Take me to Karnak".';
-        return site.name + ': ' + site.location + '. Dynasty ' + site.dynasty + ', ' + site.period + '. ' + site.fact + ' To view in 3D, click the Scene cards on the home page.';
-      },
-      search(intent) {
-        if (intent.type === 'site') { const s = KB.sites[intent.id]; return s ? s.name + ' | Dynasty ' + s.dynasty + ' | ' + s.period + ' | ' + s.location + ' | Built: ' + s.built + ' | ' + s.fact : ''; }
-        if (intent.type === 'dynasty') { const d = KB.dynasties[intent.id]; return d ? d.aka + ' (' + d.period + '). ' + d.notes : ''; }
-        if (intent.type === 'material') return KB.materials[intent.id] || '';
-        if (intent.type === 'person') { const p = KB.people[intent.id]; return p ? p.name + ' - ' + p.role + ', Dynasty ' + p.dynasty + '. ' + p.fact : ''; }
-        return 'Try asking about specific sites, dynasties, materials, or people. For example: "Tell me about the Karnak Temple" or "Who was Hatshepsut?"';
-      },
-      compare(intent) {
-        const [a, b] = intent.sites;
-        const sa = KB.sites[a], sb = KB.sites[b];
-        return 'Comparing ' + sa.name + ' vs ' + sb.name + ':\n  Dynasty: ' + sa.dynasty + ' vs ' + sb.dynasty + '\n  Period: ' + sa.period + ' vs ' + sb.period + '\n  Material: ' + sa.material + ' vs ' + sb.material + '\n  Location: ' + sa.location + ' vs ' + sb.location + '\n\n' + sa.name + ': ' + sa.fact + '\n' + sb.name + ': ' + sb.fact;
-      },
-      compare_dynasties(intent) {
-        const [a, b] = intent.dynasties;
-        const da = KB.dynasties[a], db = KB.dynasties[b];
-        return 'Comparing ' + a + ' vs ' + b + ':\n  ' + da.period + ' vs ' + db.period + '\n  ' + da.notes + '\n\n  ' + db.notes;
-      },
-      list(intent) {
-        if (intent.filter === 'dyn18') {
-          const sites = Object.entries(KB.sites).filter(([k,v]) => v.dynasty === 18);
-          if (sites.length === 0) return 'No Dynasty 18 sites found. Try "List all pyramids".';
-          return '18th Dynasty Sites:\n' + sites.map(([k,v]) => v.name + ' (' + v.type + ', ' + v.location + ')').join('\n');
-        }
-        const all = Object.entries(KB.sites).map(([k,v]) => v.name + ' - ' + v.type + ', Dynasty ' + v.dynasty + ' (' + v.period + ')').join('\n');
-        return 'All Sites in Knowledge Base:\n' + all;
-      },
-      export() { return 'Export feature coming soon! I will be able to generate PDF reports, Markdown summaries, and PPT presentations from your research queries.'; },
-      greet() { return 'Hello! I am your Heritage Agent. I know about ' + Object.keys(KB.sites).length + ' ancient Egyptian sites across multiple dynasties. Ask me anything — try "Show me the pyramids" or "Tell me about the 18th Dynasty".'; },
-      help() { return 'I can help you:\n  Search sites: "Tell me about Karnak"\n  Compare: "Compare Khufu and Khafre pyramids"\n  List: "Show me all 18th Dynasty sites"\n  Explain: "What is limestone?"\n  People: "Who was Hatshepsut?"\n  Export: Coming soon!'; },
-    };
-
-    // Agent Core
-    const Agent = {
-      history: [],
-      mode: 'local',
-      async process(input) {
-        this.history.push({ role: 'user', content: input });
-        if (this.history.length > 30) this.history.splice(0, 5);
-        await new Promise(r => setTimeout(r, 500 + Math.random() * 800));
-        const intent = detectIntent(input);
-        const handler = Tools[intent.name] || Tools.search;
-        const response = handler(intent) || 'I am not sure how to answer that. Try asking about specific sites, dynasties, or people. Type "help" to see what I can do.';
-        this.history.push({ role: 'agent', content: response });
-        return response;
+      p: {
+        khufu: { n:'Khufu (Cheops)', r:'Pharaoh', d:4, f:'Great Pyramid builder. Only statue: 7.5cm ivory.' },
+        hatshepsut: { n:'Hatshepsut', r:'Female Pharaoh', d:18, f:'Reigned 22yr. Temple at Deir el-Bahari. Depicted with beard.' },
+        ramesses: { n:'Ramesses II', r:'Pharaoh', d:19, f:'66yr reign. Abu Simbel. Battle of Kadesh. 100+ children.' },
       },
     };
 
-    // Chat UI
-    function addMessage(role, text) {
-      const container = document.getElementById('agent-msgs');
-      const div = document.createElement('div');
-      div.className = 'amsg ' + role;
-      if (role === 'agent') {
-        div.innerHTML = '<div class="alabel">Heritage Agent</div>' + text.replace(/\n/g, '<br>');
-      } else {
-        div.textContent = text;
+    function ai(text) {
+      var t = text.toLowerCase();
+      if (/show me|go to|navigate|open/i.test(t)) {
+        for (var k in KB.s) if (t.includes(k)) return { n:'nav', k:k };
       }
-      container.appendChild(div);
-      container.scrollTop = container.scrollHeight;
+      if (/compare|versus|vs|diff/i.test(t)) {
+        var f = Object.keys(KB.s).filter(function(x){return t.includes(x)});
+        if (f.length>=2) return { n:'cmp', a:f[0], b:f[1] };
+        var d = Object.keys(KB.d).filter(function(x){return t.includes(x)});
+        if (d.length>=2) return { n:'cmpd', a:d[0], b:d[1] };
+      }
+      if (/list|all/i.test(t)) {
+        if (/18th|eighteen/i.test(t)) return { n:'lst', f:'d18' };
+        return { n:'lst', f:'all' };
+      }
+      for (var k in KB.s) if (t.includes(k)) return { n:'src', tp:'s', k:k };
+      for (var k in KB.d) if (t.includes(k)) return { n:'src', tp:'d', k:k };
+      for (var k in KB.m) if (t.includes(k)) return { n:'src', tp:'m', k:k };
+      for (var k in KB.p) if (t.includes(k)) return { n:'src', tp:'p', k:k };
+      if (/hi|hello|hey/i.test(t)) return { n:'hi' };
+      if (/help/i.test(t)) return { n:'hlp' };
+      return { n:'src', tp:'g' };
     }
 
-    async function sendMessage() {
-      const input = document.getElementById('agent-input');
-      const btn = document.getElementById('agent-send');
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = '';
-      btn.disabled = true;
-      addMessage('user', text);
-      const response = await Agent.process(text);
-      addMessage('agent', response);
-      btn.disabled = false;
-      input.focus();
+    function respond(intent) {
+      if (intent.n==='nav') { var s=KB.s[intent.k]; return s?s.n+': Dynasty '+s.d+', '+s.p+'. '+s.l+'. '+s.f:'Not found.'; }
+      if (intent.n==='cmp') { var a=KB.s[intent.a], b=KB.s[intent.b]; return 'Comparing: '+a.n+' vs '+b.n+'\nDynasty: '+a.d+' vs '+b.d+'\nMaterial: '+a.m+' vs '+b.m+'\n\n'+a.f+'\n\n'+b.f; }
+      if (intent.n==='cmpd') { var da=KB.d[intent.a], db=KB.d[intent.b]; return intent.a+' vs '+intent.b+':\n'+da.per+' - '+da.n+'\n\n'+db.per+' - '+db.n; }
+      if (intent.n==='lst') {
+        if (intent.f==='d18') { var r=[]; for(var k in KB.s) if(KB.s[k].d===18) r.push(KB.s[k].n); return '18th Dynasty:\n'+r.join('\n'); }
+        var all=[]; for(var k in KB.s) all.push(KB.s[k].n+' (Dynasty '+KB.s[k].d+')'); return 'All sites:\n'+all.join('\n');
+      }
+      if (intent.n==='src') {
+        if (intent.tp==='s') { var s=KB.s[intent.k]; return s?s.n+' | D'+s.d+' | '+s.p+' | '+s.l+' | '+s.m+'\n'+s.f:''; }
+        if (intent.tp==='d') { var d=KB.d[intent.k]; return d?d.aka+' ('+d.per+')\n'+d.n:''; }
+        if (intent.tp==='m') return KB.m[intent.k]||'';
+        if (intent.tp==='p') { var p=KB.p[intent.k]; return p?p.n+' - '+p.r+', D'+p.d+'. '+p.f:''; }
+        return 'Try: "Tell me about the pyramids" or "Who was Hatshepsut?"';
+      }
+      if (intent.n==='hi') return 'Hello! I know '+Object.keys(KB.s).length+' sites, '+Object.keys(KB.d).length+' dynasties. Ask me anything about ancient Egypt.';
+      if (intent.n==='hlp') return 'Try: "Tell me about Karnak" | "Compare Khufu and Khafre" | "List 18th Dynasty" | "What is limestone?" | "Who was Hatshepsut?"';
+      return 'I did not understand. Try "Tell me about the pyramids" or "Help".';
     }
 
-    // Event bindings
-    document.getElementById('agent-send').addEventListener('click', sendMessage);
-    document.getElementById('agent-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
-    document.querySelectorAll('.agent-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
+    function addMsg(role, text) {
+      var c = document.getElementById('amsgs');
+      var d = document.createElement('div');
+      d.className = 'amsg ' + role;
+      if (role==='agent') d.innerHTML = '<div class="albl">Heritage Agent</div>' + text.replace(/\n/g,'<br>');
+      else d.textContent = text;
+      c.appendChild(d); c.scrollTop = c.scrollHeight;
+    }
+
+    async function sendMsg() {
+      var inp = document.getElementById('agent-input');
+      var btn = document.getElementById('agent-send');
+      var txt = inp.value.trim();
+      if (!txt) return;
+      inp.value = ''; btn.disabled = true;
+      addMsg('user', txt);
+      await new Promise(function(r){setTimeout(r,400+Math.random()*800)});
+      var resp = respond(ai(txt));
+      addMsg('agent', resp);
+      btn.disabled = false; inp.focus();
+    }
+
+    document.getElementById('agent-send').addEventListener('click', sendMsg);
+    document.getElementById('agent-input').addEventListener('keydown', function(e){if(e.key==='Enter')sendMsg()});
+    document.querySelectorAll('.achp').forEach(function(chip){
+      chip.addEventListener('click', function(){
         document.getElementById('agent-input').value = chip.dataset.q;
-        sendMessage();
+        sendMsg();
       });
     });
 
-    // Agent panel toggle
-    const agentPanel = document.getElementById('agent-panel');
-    document.getElementById('btn-agent').addEventListener('click', () => {
-      const isOpen = agentPanel.classList.toggle('open');
-      document.getElementById('btn-agent').style.background = isOpen ? 'rgba(74,222,128,.15)' : 'rgba(0,0,0,.5)';
-      document.getElementById('btn-agent').style.borderColor = isOpen ? 'rgba(74,222,128,.3)' : 'rgba(229,217,197,.12)';
-      document.getElementById('btn-agent').style.color = isOpen ? '#4ade80' : 'rgba(229,217,197,.55)';
+    // Toggle agent panel
+    var ap = document.getElementById('agent-panel');
+    document.getElementById('btn-agent').addEventListener('click', function(){
+      ap.classList.toggle('open');
+      var on = ap.classList.contains('open');
+      document.getElementById('btn-agent').style.background = on ? 'rgba(74,222,128,.15)' : 'rgba(0,0,0,.5)';
+      document.getElementById('btn-agent').style.borderColor = on ? 'rgba(74,222,128,.3)' : 'rgba(229,217,197,.12)';
+      document.getElementById('btn-agent').style.color = on ? '#4ade80' : 'rgba(229,217,197,.55)';
     });
-
-    console.log('[Heritage Agent] Ready. Sites:', Object.keys(KB.sites).length, 'Dynasties:', Object.keys(KB.dynasties).length);
 
 
     /* ─── Animation loop ─── */
@@ -1219,27 +1123,20 @@
     animate();
   </script>
 
-  <!-- ═══ Heritage Agent Panel ═══ -->
+  <!-- Heritage Agent Panel -->
   <div id="agent-panel">
-    <div class="agent-header">
-      <span class="dot"></span>
-      <h3>Heritage Agent</h3>
-      <span class="mode-badge" id="agent-mode-badge">local</span>
+    <div class="ahdr"><span class="adot"></span><h3>Heritage Agent</h3></div>
+    <div class="achps">
+      <button class="achp" data-q="Show me the Pyramid of Khufu">Khufu</button>
+      <button class="achp" data-q="Tell me about the Old Kingdom">Old Kingdom</button>
+      <button class="achp" data-q="Compare Dynasty 4 and Dynasty 5">Compare</button>
+      <button class="achp" data-q="What materials were used in pyramid construction?">Materials</button>
+      <button class="achp" data-q="Explain the significance of the Sphinx">Sphinx</button>
     </div>
-    <div class="agent-chips" id="agent-chips">
-      <button class="agent-chip" data-q="Show me the Pyramid of Khufu">Show Khufu</button>
-      <button class="agent-chip" data-q="Tell me about the Old Kingdom">Old Kingdom</button>
-      <button class="agent-chip" data-q="Compare Dynasty 4 and Dynasty 5">Compare Dynasties</button>
-      <button class="agent-chip" data-q="What materials were used in pyramid construction?">Materials</button>
-      <button class="agent-chip" data-q="Explain the significance of the Sphinx">The Sphinx</button>
+    <div class="amsgs" id="amsgs">
+      <div class="amsg agent"><div class="albl">Heritage Agent</div>Welcome! I am your AI guide to ancient Egypt. Ask me about pyramids, dynasties, materials, and historical figures.</div>
     </div>
-    <div class="agent-msgs" id="agent-msgs">
-      <div class="amsg agent">
-        <div class="alabel">Heritage Agent</div>
-        Welcome! I am your AI Heritage guide. Ask me anything about ancient Egypt — I can search knowledge, compare sites, explain history, and guide your exploration of the 3D world. Try: "Show me Khufu's pyramid" or "Tell me about the 18th Dynasty temples".
-      </div>
-    </div>
-    <div class="agent-input-wrap">
+    <div class="ait">
       <input type="text" id="agent-input" placeholder="Ask about ancient Egypt..." />
       <button id="agent-send">Send</button>
     </div>
