@@ -432,34 +432,35 @@ async function send() {
   input.value = ''; input.style.height = 'auto';
   isLoading = true; sendBtn.disabled = true;
 
-  // ── Only use VLM for visual analysis queries ──
+  // ── Always search archive locally ──
   const useVLM = isVisualQuery(text);
+  const matches = searchPhotos(text);
   let imageBlocks = [];
   let vlmPhotoCount = 0;
-  let matches = [];
 
-  if (useVLM) {
-    matches = searchPhotos(text);
-    if (matches.length > 0) {
-      messages.push({ role: 'assistant', content: '👁️ Searching archive for relevant photos... _(VLM will analyze them visually)_' });
-      render();
-      const topMatches = matches.slice(0, 3);
-      const fetched = await Promise.all(topMatches.map(m => fetchPhotoBase64(m.path)));
-      imageBlocks = fetched.filter(Boolean);
-      vlmPhotoCount = imageBlocks.length;
-      messages.pop();
-    }
+  // Build photo URLs from local search results (always)
+  const foundPhotos = matches.slice(0, 6).map(m => ({
+    label: m.name,
+    url: ARCHIVE_BASE + '/' + m.path.split('/').map(encodeURIComponent).join('/')
+  }));
+
+  // Only fetch base64 for VLM visual analysis
+  if (useVLM && matches.length > 0) {
+    messages.push({ role: 'assistant', content: '👁️ Sending ' + Math.min(matches.length, 3) + ' photo(s) to VLM for visual analysis...' });
+    render();
+    const topMatches = matches.slice(0, 3);
+    const fetched = await Promise.all(topMatches.map(m => fetchPhotoBase64(m.path)));
+    imageBlocks = fetched.filter(Boolean);
+    vlmPhotoCount = imageBlocks.length;
+    messages.pop();
   }
 
-  // ── Build user message ──
+  // ── Build API request ──
   const userContent = [];
   userContent.push({ type: 'text', text: text });
   if (imageBlocks.length > 0) {
     imageBlocks.forEach(img => {
-      userContent.push({
-        type: 'image',
-        source: { type: 'base64', media_type: img.media_type, data: img.data }
-      });
+      userContent.push({ type: 'image', source: { type: 'base64', media_type: img.media_type, data: img.data } });
     });
   }
 
@@ -489,14 +490,9 @@ async function send() {
     const reply = data.content?.filter(c => c.type === 'text').map(c => c.text).join('\n') || '(no response)';
     const aiPhotos = extractPhotos(reply);
 
-    // Auto-display VLM-analyzed photos if any
-    const sentPhotos = matches.slice(0, imageBlocks.length).map(m => ({
-      label: m.name,
-      url: ARCHIVE_BASE + '/' + m.path.split('/').map(encodeURIComponent).join('/')
-    }));
-
-    const seen = new Set(sentPhotos.map(p => p.url));
-    const allPhotos = [...sentPhotos, ...aiPhotos.filter(p => !seen.has(p.url))];
+    // Merge: locally matched photos first, then any AI-generated ones
+    const seen = new Set(foundPhotos.map(p => p.url));
+    const allPhotos = [...foundPhotos, ...aiPhotos.filter(p => !seen.has(p.url))];
 
     const lastUser = messages.findLast(m => m.role === 'user');
     if (lastUser) lastUser.vlmPhotos = vlmPhotoCount;
