@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Giza World · Visionary</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; overflow: hidden; background: #000; color: #e5d9c5; }
+    canvas { display: block; }
+
+    /* ── Loading Overlay ── */
+    #loadingOverlay {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #0a0a0a; color: #e5d9c5;
+      transition: opacity 0.8s ease;
+    }
+    #loadingOverlay.hidden { opacity: 0; pointer-events: none; }
+    #loadingOverlay .title { font-size: 1.6rem; margin-bottom: 1.5rem; letter-spacing: .15em; }
+    .progress-track { width: 280px; height: 3px; background: rgba(229,217,197,.15); border-radius: 2px; overflow: hidden; margin-bottom: .5rem; }
+    .progress-fill { height: 100%; width: 0%; border-radius: 2px; background: linear-gradient(90deg, #c9a96e, #e5d9c5); transition: width .3s ease; }
+    .progress-text { font-size: .75rem; opacity: .5; letter-spacing: .04em; }
+
+    /* ── HUD ── */
+    #hud {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, transparent 100%);
+      display: flex; align-items: center; justify-content: space-between;
+      pointer-events: none;
+    }
+    #hud > * { pointer-events: auto; }
+    #hud h1 { font-size: 1rem; font-weight: 600; letter-spacing: .2em; }
+    #hud .subtitle { font-size: .65rem; color: rgba(229,217,197,.4); letter-spacing: .08em; }
+
+    .back-btn {
+      padding: .4rem 1rem; font-size: .72rem;
+      background: rgba(0,0,0,.5); border: 1px solid rgba(229,217,197,.18);
+      border-radius: 6px; color: rgba(229,217,197,.55);
+      cursor: pointer; backdrop-filter: blur(8px); transition: all .3s;
+      text-decoration: none;
+    }
+    .back-btn:hover { background: rgba(229,217,197,.1); color: #e5d9c5; }
+
+    /* ── Stats ── */
+    #stats {
+      position: fixed; top: 90px; right: 16px; z-index: 10;
+      font-size: .62rem; color: rgba(229,217,197,.35);
+      text-align: right; letter-spacing: .04em;
+    }
+
+    /* ── Bottom Bar ── */
+    #bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+      padding: .6rem 1rem;
+      background: linear-gradient(0deg, rgba(0,0,0,.7) 0%, transparent 100%);
+      display: flex; gap: 8px; justify-content: center;
+    }
+    .scene-chip {
+      padding: .4rem .9rem;
+      background: rgba(229,217,197,.05);
+      border: 1px solid rgba(229,217,197,.1);
+      border-radius: 999px;
+      color: rgba(229,217,197,.45);
+      font-family: inherit; font-size: .68rem; letter-spacing: .04em;
+      cursor: pointer; transition: all .25s; white-space: nowrap;
+    }
+    .scene-chip:hover { background: rgba(229,217,197,.1); color: #e5d9c5; }
+    .scene-chip.active { background: rgba(201,169,110,.18); border-color: #c9a96e; color: #e5d9c5; }
+
+    /* ── Hint ── */
+    .hud-hint {
+      position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%); z-index: 10;
+      font-size: .6rem; color: rgba(229,217,197,.2);
+      letter-spacing: .06em; white-space: nowrap;
+    }
+
+    /* ── Error ── */
+    #noWebGPU {
+      position: fixed; inset: 0; z-index: 200;
+      display: none; align-items: center; justify-content: center;
+      background: rgba(10,10,10,.95); color: #e5d9c5;
+    }
+    #noWebGPU.show { display: flex; }
+    #noWebGPU .msg { text-align: center; max-width: 400px; padding: 2rem; }
+    #noWebGPU h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #e8a090; }
+    #noWebGPU p { font-size: .8rem; opacity: .6; margin-bottom: .5rem; }
+
+    #errorModal { display: none; }
+    #errorModal.show { display: flex; position: fixed; inset: 0; z-index: 200; align-items: center; justify-content: center; background: rgba(0,0,0,.8); }
+    #errorModal .modal-content { background: #1a1a1a; border: 1px solid rgba(229,217,197,.2); border-radius: 12px; padding: 2rem; text-align: center; max-width: 400px; }
+    #errorModal h3 { margin-bottom: .8rem; }
+    #closeError { margin-top: 1rem; padding: .4rem 1.2rem; background: rgba(201,169,110,.2); border: 1px solid #c9a96e; border-radius: 6px; color: #e5d9c5; cursor: pointer; font-family: inherit; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ Loading Overlay ═══ -->
+  <div id="loadingOverlay">
+    <div class="title">Giza World · Visionary</div>
+    <div class="progress-track"><div class="progress-fill"></div></div>
+    <div class="progress-text">Initializing…</div>
+  </div>
+
+  <!-- ═══ Canvas ═══ -->
+  <canvas id="canvas"></canvas>
+
+  <!-- ═══ HUD ═══ -->
+  <div id="hud">
+    <div>
+      <h1>Giza World · Visionary</h1>
+      <div class="subtitle" id="scene-label">3D Gaussian Splatting World</div>
+    </div>
+    <a href="v3.html" class="back-btn">← Back to Home</a>
+  </div>
+
+  <!-- ═══ Stats ═══ -->
+  <div id="stats">
+    <div>FPS: <span id="fps">--</span></div>
+    <div>Points: <span id="pointCount">--</span></div>
+  </div>
+
+  <!-- ═══ Hint ═══ -->
+  <div class="hud-hint">🖱️ Drag to orbit · Scroll to zoom · Right-drag to pan · Keys 1/2 switch scenes</div>
+
+  <!-- ═══ Bottom Scene Bar ═══ -->
+  <div id="bottom-bar">
+    <button class="scene-chip active" data-scene="1">🏛️ Giza Gallery</button>
+    <button class="scene-chip" data-scene="2">🪦 Giza Site</button>
+  </div>
+
+  <!-- ═══ WebGPU Not Available ═══ -->
+  <div id="noWebGPU">
+    <div class="msg">
+      <h2>⚠️ WebGPU Not Available</h2>
+      <p>Visionary requires WebGPU support with hardware acceleration.</p>
+      <p>Please use <strong>Chrome 113+</strong> on Windows with a discrete GPU.</p>
+      <a href="v3.html" class="back-btn" style="display:inline-block;margin-top:1rem;">← Back to v3 (WebGL)</a>
+    </div>
+  </div>
+
+  <!-- ═══ Error Modal ═══ -->
+  <div id="errorModal">
+    <div class="modal-content">
+      <h3>Error</h3>
+      <p id="errorMessage"></p>
+      <button id="closeError">Close</button>
+    </div>
+  </div>
+
+  <!-- ═══ Import Map ═══ -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./lib/three/three.module.min.js",
+      "three/webgpu": "./lib/three/three.webgpu.min.js",
+      "three/examples/jsm/loaders/GLTFLoader.js": "./lib/three/examples/jsm/loaders/GLTFLoader.js",
+      "three/examples/jsm/loaders/OBJLoader.js": "./lib/three/examples/jsm/loaders/OBJLoader.js",
+      "three/examples/jsm/loaders/FBXLoader.js": "./lib/three/examples/jsm/loaders/FBXLoader.js",
+      "three/examples/jsm/loaders/STLLoader.js": "./lib/three/examples/jsm/loaders/STLLoader.js",
+      "three/examples/jsm/loaders/PLYLoader.js": "./lib/three/examples/jsm/loaders/PLYLoader.js",
+      "three/examples/jsm/loaders/RGBELoader.js": "./lib/three/examples/jsm/loaders/RGBELoader.js",
+      "gl-matrix": "./lib/gl-matrix/gl-matrix-min.js",
+      "onnxruntime-web": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.all.min.mjs"
+    }
+  }
+  </script>
+
+  <!-- ═══ Main Script ═══ -->
+  <script type="module">
+    import { App } from './visionary-core.es.js';
+
+    // ── Scene definitions ──
+    const SCENES = {
+      '1': {
+        label: 'Giza Gallery · Divine Triad',
+        ply: 'scene/1/2f07d44a6b43046c9d3208f2dd6f4e17.ply',
+        spz: 'scene/1/68c4a4416428db91355f9d730e54ba89.spz'
+      },
+      '2': {
+        label: 'Giza Site · Royal Monument',
+        ply: 'scene/2/2e184245233163d44ec1ea2692df242b.ply',
+        spz: 'scene/2/9949f2e864ae804749347e68fec11237.spz'
+      }
+    };
+
+    let app = null;
+    let currentScene = '1';
+
+    // ── Scene label update ──
+    function updateSceneLabel(id) {
+      document.getElementById('scene-label').textContent = SCENES[id]?.label || '';
+    }
+
+    // ── Load scene ──
+    async function loadScene(id) {
+      const scene = SCENES[id];
+      if (!scene || !app) return;
+
+      updateSceneLabel(id);
+      console.log(`[Giza] Loading scene ${id}: ${scene.label}`);
+
+      try {
+        // Load PLY or SPZ via Visionary's public API
+        await app.loadGaussian(scene.ply);
+
+        // Update chip styles
+        document.querySelectorAll('.scene-chip').forEach(chip => {
+          chip.classList.toggle('active', chip.dataset.scene === id);
+        });
+
+        currentScene = id;
+        console.log(`[Giza] Scene ${id} loaded successfully`);
+      } catch (err) {
+        console.error(`[Giza] Failed to load scene ${id}:`, err);
+        // Try SPZ as fallback
+        if (scene.spz) {
+          try {
+            console.log(`[Giza] Trying SPZ fallback…`);
+            await app.loadSPZ(scene.spz);
+            currentScene = id;
+            console.log(`[Giza] Scene ${id} loaded via SPZ`);
+          } catch (e2) {
+            console.error(`[Giza] SPZ fallback also failed:`, e2);
+          }
+        }
+      }
+    }
+
+    // ── Init ──
+    async function init() {
+      try {
+        app = new App();
+        await app.init();
+        console.log('[Giza] Visionary App initialized');
+
+        // Hide loading overlay
+        document.getElementById('loadingOverlay').classList.add('hidden');
+
+        // Load default scene
+        await loadScene('1');
+
+      } catch (err) {
+        console.error('[Giza] Init failed:', err);
+        document.querySelector('#loadingOverlay .progress-text').textContent =
+          'Failed: ' + err.message;
+
+        // Show WebGPU error if applicable
+        if (err.message && (err.message.includes('WebGPU') || err.message.includes('webgpu'))) {
+          document.getElementById('noWebGPU').classList.add('show');
+          document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+      }
+    }
+
+    // ── Scene switcher events ──
+    document.querySelectorAll('.scene-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const id = chip.dataset.scene;
+        if (id !== currentScene) loadScene(id);
+      });
+    });
+
+    // ── Keyboard shortcuts ──
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '1') loadScene('1');
+      if (e.key === '2') loadScene('2');
+      if (e.key === 'f' && app) {
+        // Reset camera
+        const models = app.getModels();
+        if (models.length > 0) console.log('Models loaded:', models.length);
+      }
+    });
+
+    // ── Error modal close ──
+    document.getElementById('closeError').addEventListener('click', () => {
+      document.getElementById('errorModal').classList.remove('show');
+    });
+
+    // ── Start ──
+    init();
+  </script>
+</body>
+</html>
