@@ -147,12 +147,12 @@
   <div class="welcome" id="welcome">
     <div class="welcome-icon">🏺</div>
     <h2>Ask me anything about Ancient Egypt</h2>
-    <p>G7050—G7070 tomb archives · 171 photos · <strong>VLM visual analysis</strong><br>The AI actually sees the photos and analyzes their content visually.</p>
+    <p>G7050—G7070 tomb archives · 171 photos · <strong>Knowledge + Photo Display + VLM</strong><br>Ask anything about ancient Egypt. Try "read the inscriptions on the architrave" for AI vision analysis.</p>
     <div class="welcome-suggestions">
-      <button onclick="ask('Show and visually analyze the G7070 sarcophagus photos — what do you see?')">🪦 Sarcophagus</button>
-      <button onclick="ask('Analyze the architrave inscriptions — describe the carvings')">🏛️ Architrave</button>
-      <button onclick="ask('Show the G7070 site maps and explain the layout')">🗺️ Site Maps</button>
-      <button onclick="ask('Examine the expedition diary pages — read and interpret them')">📜 Diaries</button>
+      <button onclick="ask('Show me the G7070 sarcophagus photos')">🪦 Sarcophagus</button>
+      <button onclick="ask('What are the architrave inscriptions? Read and analyze them')">🏛️ Architrave</button>
+      <button onclick="ask('Show the G7070 site maps')">🗺️ Site Maps</button>
+      <button onclick="ask('What is the source of the Hathor triad?')">📖 Hathor Source</button>
     </div>
   </div>
 </div>
@@ -305,18 +305,17 @@ async function fetchPhotoBase64(path) {
 }
 
 // ── System prompt with tomb index + VLM instructions ──
-const SYSTEM = `You are a Giza archaeology knowledge agent with VISION capabilities. You specialize in Ancient Egyptian, Giza pyramid complex, and Old Kingdom archaeology.
+const SYSTEM = `You are a Giza archaeology knowledge agent. You specialize in Ancient Egyptian, Giza pyramid complex, and Old Kingdom archaeology.
 
-## Core Capabilities
-You have access to the complete archaeological archives of tombs G7050, G7060, and G7070. **When users ask about photos, the system will automatically attach actual archive images to their message for you to analyze visually.** You can actually SEE these photos — describe what you observe in them.
+## Two Modes
 
-## How It Works
-1. User asks a question about the tomb archives
-2. The system searches the archive and attaches relevant photos as images
-3. You receive the images and can analyze them visually
-4. You respond with what you actually SEE in the photos plus archaeological context
+### 1. Knowledge Q&A + Photo Display (default)
+Answer questions using your knowledge. When users ask to see photos, use the text index below to generate photo display blocks. The photos will appear in the chat.
 
-## Archive Index (171 files total)
+### 2. VLM Visual Analysis (only when images are attached)
+When the user's message includes actual images, analyze what you SEE in them — describe inscriptions, carvings, details, and visual characteristics.
+
+## Archive Photo Index (for display)
 ### G 7070 Tomb (Menkaure-related)
 - Photos (26): A3697P_ann_NS, A4220P_ann_NS, A4237_NS, A4284_NS, A4919_NS, A4920_NS, AAW1200, B5908_NS, B5909_NS, PDM_1993.068.16, PDM_1993.068.17, PDM_1993.130.01, PDM_1993.131.25, etc.
 - Sarcophagus (8): A5133_NS, A5134_NS, EG022547, EG022558, PDM_00395, PDM_00397, PDM_00398, PDM_00399
@@ -332,18 +331,18 @@ You have access to the complete archaeological archives of tombs G7050, G7060, a
 - Photos (9), Maps & Plans (11), Expedition Diaries (8), Unpublished Manuscripts (6)
 
 ## Photo Display Format
-When you want to show photos to the user, use this format:
+When users want to see photos, use this format:
 \`\`\`photos
-[Label describing the photo](${ARCHIVE_BASE}/G%207070%20Files/G%207070%20Photos/Sarcophagus/A5133_NS.jpg)
+[Sarcophagus A5133_NS](${ARCHIVE_BASE}/G%207070%20Files/G%207070%20Photos/Sarcophagus/A5133_NS.jpg)
+[EG022547](${ARCHIVE_BASE}/G%207070%20Files/G%207070%20Photos/Sarcophagus/EG022547.jpg)
 \`\`\`
 
 ## Response Principles
-1. **VISUAL ANALYSIS FIRST** — if the user's message includes images, describe what you actually SEE in them before providing historical context
-2. **Be specific about visual details** — mention colors, materials, carvings, inscriptions, damage patterns, and photographic qualities you observe
-3. **Distinguish observation from interpretation** — say "I can see..." for direct observations vs "This likely represents..." for interpretations
-4. **Cite specific references** — reference MFA catalog numbers or archive filenames when mentioning artifacts
-5. **Answer in English** — use clear academic language with Egyptian terminology where appropriate
-6. **If no images are attached** to the user's message, you can suggest which archive photos might help answer their question`;
+1. **Knowledge first** — answer questions from your training data and the archive index
+2. **Show photos proactively** — when relevant, include photo blocks so users can see the artifacts
+3. **If images are attached** — describe what you actually SEE (inscriptions, details, condition)
+4. **Cite specific references** — use MFA catalog numbers or archive filenames
+5. **Answer in English** — use clear academic language with Egyptian terminology`;
 
 function render() {
   document.querySelectorAll('.msg').forEach(e => e.remove());
@@ -410,6 +409,20 @@ function openLightbox(url) {
   document.body.appendChild(lb);
 }
 
+// ── Detect if user is asking for visual analysis (VLM) ──
+function isVisualQuery(text) {
+  const visualKeywords = [
+    'inscription', 'inscriptions', 'writing', 'written', 'text on',
+    'carving', 'carved', 'carvings', 'hieroglyph', 'hieroglyphs', 'glyph',
+    'read this', 'what does it say', 'what do you see',
+    'analyze this', 'examine this', 'look closely', 'inspect',
+    'identify the', 'recognition', 'recognize',
+    '字迹', '刻字', '铭文', '象形文字', '写了什么', '识别', '认出'
+  ];
+  const q = text.toLowerCase();
+  return visualKeywords.some(k => q.includes(k));
+}
+
 async function send() {
   const text = input.value.trim();
   if (!text || isLoading) return;
@@ -419,27 +432,26 @@ async function send() {
   input.value = ''; input.style.height = 'auto';
   isLoading = true; sendBtn.disabled = true;
 
-  // ── VLM: search for relevant photos ──
-  const matches = searchPhotos(text);
+  // ── Only use VLM for visual analysis queries ──
+  const useVLM = isVisualQuery(text);
   let imageBlocks = [];
   let vlmPhotoCount = 0;
+  let matches = [];
 
-  if (matches.length > 0) {
-    // Show searching indicator
-    messages.push({ role: 'assistant', content: '🔍 Searching archive for relevant photos... _(VLM will analyze matched images)_' });
-    render();
-
-    // Fetch up to 3 best matches as base64 (limit to avoid huge payloads)
-    const topMatches = matches.slice(0, 3);
-    const fetched = await Promise.all(topMatches.map(m => fetchPhotoBase64(m.path)));
-    imageBlocks = fetched.filter(Boolean);
-    vlmPhotoCount = imageBlocks.length;
+  if (useVLM) {
+    matches = searchPhotos(text);
+    if (matches.length > 0) {
+      messages.push({ role: 'assistant', content: '👁️ Searching archive for relevant photos... _(VLM will analyze them visually)_' });
+      render();
+      const topMatches = matches.slice(0, 3);
+      const fetched = await Promise.all(topMatches.map(m => fetchPhotoBase64(m.path)));
+      imageBlocks = fetched.filter(Boolean);
+      vlmPhotoCount = imageBlocks.length;
+      messages.pop();
+    }
   }
 
-  // Remove searching indicator
-  if (matches.length > 0) messages.pop();
-
-  // ── Build user message with images ──
+  // ── Build user message ──
   const userContent = [];
   userContent.push({ type: 'text', text: text });
   if (imageBlocks.length > 0) {
@@ -457,7 +469,6 @@ async function send() {
   const apiMessages = [
     { role: 'system', content: SYSTEM },
     ...messages.slice(-20).map(m => {
-      // Reconstruct user message with images for the API
       if (m.role === 'user' && m === messages[messages.length - 1] && imageBlocks.length > 0) {
         return { role: 'user', content: userContent };
       }
@@ -478,17 +489,15 @@ async function send() {
     const reply = data.content?.filter(c => c.type === 'text').map(c => c.text).join('\n') || '(no response)';
     const aiPhotos = extractPhotos(reply);
 
-    // Auto-display the photos that were sent to the VLM
+    // Auto-display VLM-analyzed photos if any
     const sentPhotos = matches.slice(0, imageBlocks.length).map(m => ({
       label: m.name,
       url: ARCHIVE_BASE + '/' + m.path.split('/').map(encodeURIComponent).join('/')
     }));
 
-    // Merge: sent photos first, then any additional photos the AI generated
     const seen = new Set(sentPhotos.map(p => p.url));
     const allPhotos = [...sentPhotos, ...aiPhotos.filter(p => !seen.has(p.url))];
 
-    // Update the last user message with vlmPhotoCount
     const lastUser = messages.findLast(m => m.role === 'user');
     if (lastUser) lastUser.vlmPhotos = vlmPhotoCount;
 
