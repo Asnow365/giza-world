@@ -53,7 +53,13 @@ Requires Python 3.8+. For Type it!, an Anthropic API key is needed (configured i
 
 ## Live Demo
 
-https://asnow365.github.io/giza-world/
+**Home page & Scene Viewer:** https://asnow365.github.io/giza-world/v3.html
+
+> **Note:** The Type it! AI Agent and See3D features require the Python server for API proxying. To use the full platform, clone the repo and run locally:
+> ```bash
+> python server.py 8080
+> # Then open http://localhost:8080/v3.html
+> ```
 
 ## GPU Deployment (See3D)
 
