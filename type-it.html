@@ -315,9 +315,9 @@ async function send() {
   const apiMessages = [{ role: 'system', content: SYSTEM }, ...messages.slice(-20)];
 
   try {
-    const resp = await fetch('/api/chat', {
+    const resp = await fetch('https://cloud.hongqiye.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': key },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 3072, messages: apiMessages })
     });
 
