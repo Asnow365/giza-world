@@ -14,7 +14,7 @@ from urllib.parse import unquote
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
 API_URL = "https://cloud.hongqiye.com/v1/messages"
-ARCHIVE_ROOT = r"E:\2026\01-gazaproject\3 Tomb Packages G7050 G7060 G7070"
+ARCHIVE_ROOT = r"E:\2026\01-gazaproject\01\archive"
 
 class GizaHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):

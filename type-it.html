@@ -194,6 +194,7 @@ function saveKey() {
 if (!getKey()) { keyModal.classList.remove('hidden'); }
 
 // ── System prompt with tomb index ──
+const ARCHIVE_BASE = window.location.origin + '/archive';
 const SYSTEM = `You are a Giza archaeology knowledge agent, specializing in Ancient Egyptian, Giza pyramid complex, and Old Kingdom archaeology.
 
 ## Core Capabilities
