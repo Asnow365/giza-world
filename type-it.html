@@ -226,8 +226,8 @@ You have access to the complete archaeological archives of tombs G7050, G7060, a
 ## Photo Display Format
 When the user wants to see photos, use the following format to embed image links (served via /archive/ path):
 \`\`\`photos
-[Sarcophagus A5133_NS](http://localhost:8080/archive/G%207070%20Files/G%207070%20Photos/Sarcophagus/A5133_NS.jpg)
-[Sarcophagus EG022547](http://localhost:8080/archive/G%207070%20Files/G%207070%20Photos/Sarcophagus/EG022547.jpg)
+[Sarcophagus A5133_NS](${ARCHIVE_BASE}/G%207070%20Files/G%207070%20Photos/Sarcophagus/A5133_NS.jpg)
+[Sarcophagus EG022547](${ARCHIVE_BASE}/G%207070%20Files/G%207070%20Photos/Sarcophagus/EG022547.jpg)
 \`\`\`
 
 ## Response Principles
@@ -285,7 +285,7 @@ function extractPhotos(text) {
   const match = text.match(/```photos\n?([\s\S]*?)```/);
   if (!match) return [];
   const photos = [];
-  const re = /\[(.+?)\]\((http:\/\/localhost:8080\/archive\/.+?)\)/g;
+  const re = /\[(.+?)\]\((.+?\/archive\/.+?)\)/g;
   let m;
   while ((m = re.exec(match[1])) !== null) {
     photos.push({ label: m[1], url: m[2] });
@@ -315,7 +315,7 @@ async function send() {
   const apiMessages = [{ role: 'system', content: SYSTEM }, ...messages.slice(-20)];
 
   try {
-    const resp = await fetch('https://cloud.hongqiye.com/v1/messages', {
+    const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 3072, messages: apiMessages })
