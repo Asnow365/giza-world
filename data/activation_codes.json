@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "description": "SHA-256 hashed activation codes for Giza World AI Studio",
+  "codes": [
+    {
+      "hash": "5114765351b766bd3e2eca3e5b636c08ad3f0df75f9920c59d195b34fc4bde17",
+      "note": "sample"
+    },
+    {
+      "hash": "8d861de14a8ff31dd635b3696c6bb86f6640c837f92e74012501017b8e568f0b",
+      "note": "sample"
+    },
+    {
+      "hash": "4f4f62f03ba7e173f3bf84ea4b14b93f5b36ec3fb70adceaa215c5d2f07ae734",
+      "note": "sample"
+    }
+  ]
+}
