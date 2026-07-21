@@ -476,13 +476,23 @@ async function send() {
 
     const data = await resp.json();
     const reply = data.content?.filter(c => c.type === 'text').map(c => c.text).join('\n') || '(no response)';
-    const photos = extractPhotos(reply);
+    const aiPhotos = extractPhotos(reply);
+
+    // Auto-display the photos that were sent to the VLM
+    const sentPhotos = matches.slice(0, imageBlocks.length).map(m => ({
+      label: m.name,
+      url: ARCHIVE_BASE + '/' + m.path.split('/').map(encodeURIComponent).join('/')
+    }));
+
+    // Merge: sent photos first, then any additional photos the AI generated
+    const seen = new Set(sentPhotos.map(p => p.url));
+    const allPhotos = [...sentPhotos, ...aiPhotos.filter(p => !seen.has(p.url))];
 
     // Update the last user message with vlmPhotoCount
     const lastUser = messages.findLast(m => m.role === 'user');
     if (lastUser) lastUser.vlmPhotos = vlmPhotoCount;
 
-    messages.push({ role: 'assistant', content: reply, photos: photos.length > 0 ? photos : undefined });
+    messages.push({ role: 'assistant', content: reply, photos: allPhotos.length > 0 ? allPhotos : undefined });
 
   } catch (e) {
     messages.push({ role: 'assistant', content: `⚠️ Error：${e.message}` });
