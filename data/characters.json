@@ -1,0 +1,75 @@
+[
+    {
+        "id": "hathor",
+        "displayName": "Hathor",
+        "objectId": "menkaure-triad-hathor-context",
+        "guideRole": "Religious and cultural context guide",
+        "reviewWorkflowState": "internal-reviewed",
+        "reviewStatus": "Source anchor identified; Egyptologist iconography review required",
+        "sourceStatus": [
+            "source-based",
+            "reconstructed",
+            "needs Egyptologist review"
+        ],
+        "bibliography": [
+            "MFA Boston 09.200 object record to verify",
+            "Penn State Art History record for MFA 09.200",
+            "Digital Giza/Giza Archives context to verify"
+        ],
+        "requiredBeforePublicUse": [
+            "Verify MFA object record",
+            "Confirm headpiece alignment",
+            "Confirm image/model rights",
+            "Add bibliography"
+        ]
+    },
+    {
+        "id": "menkaure",
+        "displayName": "Menkaure",
+        "objectId": "menkaure-royal-statue-context",
+        "guideRole": "Royal monument guide",
+        "reviewWorkflowState": "internal-reviewed",
+        "reviewStatus": "Source anchor identified; standing avatar remains speculative",
+        "sourceStatus": [
+            "source-based",
+            "speculative reconstruction",
+            "needs Egyptologist review"
+        ],
+        "bibliography": [
+            "MFA Boston conservation feature for King Menkaura",
+            "Digital Giza Menkaure page referencing MFA 09.204",
+            "Sketchfab/Digital Giza 3D model reference pending rights review"
+        ],
+        "requiredBeforePublicUse": [
+            "Verify statue source",
+            "Resolve standing pose status",
+            "Review kilt shape",
+            "Confirm rights",
+            "Add bibliography"
+        ]
+    },
+    {
+        "id": "ranefer",
+        "displayName": "Ranefer",
+        "objectId": "ranefer-tomb-sculpture-context",
+        "guideRole": "Comparative Old Kingdom sculpture guide",
+        "reviewWorkflowState": "draft",
+        "reviewStatus": "Context mismatch warning; Saqqara comparative guide only",
+        "sourceStatus": [
+            "source-based",
+            "needs context review"
+        ],
+        "bibliography": [
+            "Egypt Museum summary for Ranefer statue",
+            "Official Cairo Museum catalogue record required",
+            "Specialist review required for Giza-focused use"
+        ],
+        "requiredBeforePublicUse": [
+            "Verify Cairo catalogue record",
+            "Document why he belongs in a Giza tour",
+            "Review proportions",
+            "Confirm rights",
+            "Add bibliography"
+        ]
+    }
+]

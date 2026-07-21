@@ -1,0 +1,23 @@
+[
+    {
+        "id": "mfa-menkaure-conservation",
+        "label": "MFA Boston King Menkaura conservation feature",
+        "sourceType": "Museum conservation / object context",
+        "url": "https://www.mfa.org/collections/conservation/feature_kingmenkaura",
+        "status": "source anchor for MFA 09.204"
+    },
+    {
+        "id": "penn-menkaure-triad",
+        "label": "Penn State Art History record for MFA 09.200",
+        "sourceType": "Object metadata reference",
+        "url": "https://digital.libraries.psu.edu/digital/collection/arthist2/id/138169/",
+        "status": "source anchor for triad metadata; verify against MFA object record"
+    },
+    {
+        "id": "egypt-museum-ranefer",
+        "label": "Egypt Museum summary for Ranefer statue",
+        "sourceType": "Secondary object summary",
+        "url": "https://egypt-museum.com/statue-of-ranefer/",
+        "status": "comparative source only; official Cairo catalogue needed"
+    }
+]

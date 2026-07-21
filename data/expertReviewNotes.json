@@ -1,0 +1,26 @@
+[
+    {
+        "id": "hathor-menkaure-triad-review",
+        "characterId": "hathor",
+        "objectId": "menkaure-triad-hathor-context",
+        "reviewPriority": "high",
+        "status": "needs Egyptologist review",
+        "note": "Use MFA 09.200 / Menkaure-Hathor-Hare nome triad as the source anchor. Headpiece alignment, Hathor iconography, and animated pose must remain visibly marked as reconstructed until reviewed."
+    },
+    {
+        "id": "menkaure-standing-reconstruction-review",
+        "characterId": "menkaure",
+        "objectId": "menkaure-royal-statue-context",
+        "reviewPriority": "critical",
+        "status": "not public-exhibition ready",
+        "note": "The source anchor is a seated/colossal Menkaure statue context (MFA 09.204). Any standing avatar derived from it is speculative and must not be presented as the original object form."
+    },
+    {
+        "id": "ranefer-context-warning",
+        "characterId": "ranefer",
+        "objectId": "ranefer-tomb-sculpture-context",
+        "reviewPriority": "critical",
+        "status": "context mismatch warning",
+        "note": "Ranefer/Ranofer statue references point to Saqqara and the Egyptian Museum in Cairo rather than Giza. Keep him as a comparative Old Kingdom sculpture guide unless a Giza-specific rationale is documented."
+    }
+]

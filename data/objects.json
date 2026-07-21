@@ -1,0 +1,47 @@
+[
+    {
+        "id": "menkaure-triad-hathor-context",
+        "linkedCharacterId": "hathor",
+        "objectName": "King Menkaure, the goddess Hathor, and the deified Hare nome",
+        "objectType": "Triad statue / source anchor for Hathor guide",
+        "period": "Old Kingdom, Dynasty 4, reign of Menkaure, ca. 2490\u20132472 BCE",
+        "museum": "Museum of Fine Arts, Boston",
+        "accessionNumber": "MFA 09.200",
+        "excavationContext": "Menkaure Valley Temple, Giza; Harvard University\u2013Boston Museum of Fine Arts Expedition context",
+        "material": "Greywacke / graywacke; verify final museum spelling",
+        "sourceUrl": "https://digital.libraries.psu.edu/digital/collection/arthist2/id/138169/",
+        "license": "Rights review required before public web use",
+        "certaintyLevel": "Source anchor identified; animated guide behavior reconstructed",
+        "publicUseStatus": "Classroom prototype only until rights and Egyptologist review are complete"
+    },
+    {
+        "id": "menkaure-royal-statue-context",
+        "linkedCharacterId": "menkaure",
+        "objectName": "Colossal seated statue of King Menkaure",
+        "objectType": "Seated royal statue / source anchor for Menkaure guide",
+        "period": "Old Kingdom, Dynasty 4, reign of Menkaure, ca. 2490\u20132472 BCE",
+        "museum": "Museum of Fine Arts, Boston",
+        "accessionNumber": "MFA 09.204",
+        "excavationContext": "Menkaure Pyramid Temple, Giza; Harvard University\u2013Boston Museum of Fine Arts Expedition",
+        "material": "Travertine / Egyptian alabaster",
+        "sourceUrl": "https://www.mfa.org/collections/conservation/feature_kingmenkaura",
+        "license": "Rights review required before public web use",
+        "certaintyLevel": "Source anchor identified; standing avatar is speculative if not directly sourced",
+        "publicUseStatus": "Not approved for public exhibition as a standing avatar"
+    },
+    {
+        "id": "ranefer-tomb-sculpture-context",
+        "linkedCharacterId": "ranefer",
+        "objectName": "Standing statue of Ranefer / Ranofer, High Priest of Ptah and Seker",
+        "objectType": "Elite tomb sculpture / comparative Old Kingdom source",
+        "period": "Late Dynasty 4 to early Dynasty 5, Old Kingdom context pending specialist confirmation",
+        "museum": "Egyptian Museum, Cairo",
+        "accessionNumber": "Cairo CG 19 / JE 10063 reported in secondary references; verify official catalogue",
+        "excavationContext": "Saqqara mastaba chapel, not Giza; context mismatch must be visible",
+        "material": "Painted limestone",
+        "sourceUrl": "https://egypt-museum.com/statue-of-ranefer/",
+        "license": "Rights review required before public web use",
+        "certaintyLevel": "Comparative Old Kingdom source; not a Giza object without further rationale",
+        "publicUseStatus": "Classroom prototype only; context warning required"
+    }
+]

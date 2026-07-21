@@ -1,0 +1,73 @@
+[
+    {
+        "id": "hathor-triad-introduction",
+        "sceneId": "giza-gallery",
+        "characterId": "hathor",
+        "location": "Giza gallery \u00b7 divine triad context",
+        "motionIcon": "\u2600",
+        "motionPreset": "Greeting + Point to Monument",
+        "objective": "Identify what Hathor can safely explain and what must remain marked as reconstructed.",
+        "certaintyBadges": [
+            "source",
+            "reconstructed",
+            "review"
+        ],
+        "userChoice": [
+            {
+                "label": "Inspect source note",
+                "nextStoryId": "hathor-triad-introduction"
+            },
+            {
+                "label": "Move to Menkaure",
+                "nextStoryId": "menkaure-monument-guide"
+            }
+        ]
+    },
+    {
+        "id": "menkaure-monument-guide",
+        "sceneId": "giza-site",
+        "characterId": "menkaure",
+        "location": "Giza site \u00b7 royal monument approach",
+        "motionIcon": "\ud80c\ude50",
+        "motionPreset": "Walk / Lead + Ask Question",
+        "objective": "Separate royal monument interpretation from speculative standing-body reconstruction.",
+        "certaintyBadges": [
+            "source",
+            "speculative",
+            "review"
+        ],
+        "userChoice": [
+            {
+                "label": "Continue to Ranefer",
+                "nextStoryId": "ranefer-tomb-sculpture"
+            },
+            {
+                "label": "Return to Hathor",
+                "nextStoryId": "hathor-triad-introduction"
+            }
+        ]
+    },
+    {
+        "id": "ranefer-tomb-sculpture",
+        "sceneId": "comparative-old-kingdom",
+        "characterId": "ranefer",
+        "location": "Comparative Old Kingdom sculpture stop",
+        "motionIcon": "\ud80c\udc76",
+        "motionPreset": "Explain Object + Invite Choice",
+        "objective": "Use Ranefer only as a clearly labelled comparative guide unless Giza rationale is documented.",
+        "certaintyBadges": [
+            "source",
+            "review"
+        ],
+        "userChoice": [
+            {
+                "label": "Review source metadata",
+                "nextStoryId": "ranefer-tomb-sculpture"
+            },
+            {
+                "label": "Restart tour",
+                "nextStoryId": "hathor-triad-introduction"
+            }
+        ]
+    }
+]

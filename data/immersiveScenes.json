@@ -1,0 +1,23 @@
+[
+  {
+    "id": "giza-gallery",
+    "label": "Giza gallery · divine triad context",
+    "cameraTarget": "triad-object-anchor",
+    "hotspotIndex": 0,
+    "caption": "Begin with the object source, then explain what is reconstructed."
+  },
+  {
+    "id": "giza-site",
+    "label": "Giza site · royal monument approach",
+    "cameraTarget": "menkaure-pyramid-approach",
+    "hotspotIndex": 1,
+    "caption": "Show the monument context while keeping the standing-body warning visible."
+  },
+  {
+    "id": "comparative-old-kingdom",
+    "label": "Comparative Old Kingdom sculpture stop",
+    "cameraTarget": "comparative-sculpture-node",
+    "hotspotIndex": 2,
+    "caption": "Label Ranefer as comparative Saqqara material, not a Giza find."
+  }
+]

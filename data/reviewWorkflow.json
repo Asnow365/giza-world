@@ -1,0 +1,32 @@
+[
+    {
+        "id": "draft",
+        "label": "Draft",
+        "description": "Internal prototype state. Suitable for design iteration only.",
+        "publicDisplayAllowed": false
+    },
+    {
+        "id": "classroom-prototype",
+        "label": "Classroom prototype",
+        "description": "Can be shown in supervised teaching or hackathon contexts with uncertainty labels visible.",
+        "publicDisplayAllowed": false
+    },
+    {
+        "id": "internal-reviewed",
+        "label": "Internal reviewed",
+        "description": "Project team has linked source anchors and identified major public-use blockers.",
+        "publicDisplayAllowed": false
+    },
+    {
+        "id": "egyptologist-reviewed",
+        "label": "Egyptologist reviewed",
+        "description": "Specialist review completed for proportion, pose, iconography, clothing, context, and interpretive text.",
+        "publicDisplayAllowed": false
+    },
+    {
+        "id": "public-exhibition-ready",
+        "label": "Public exhibition ready",
+        "description": "Approved for public display with citations, rights, uncertainty labels, and reviewed narration in place.",
+        "publicDisplayAllowed": true
+    }
+]
