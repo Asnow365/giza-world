@@ -274,12 +274,13 @@ function render() {
 }
 
 function renderPhotos(photos) {
-  return `<div class="photo-grid">${photos.map(p =>
-    `<div class="photo-card" onclick="openLightbox('${p.url}')">
-      <img src="${p.url}" alt="${p.label}" loading="lazy" onerror="this.parentElement.style.display='none'">
+  return `<div class="photo-grid">${photos.map(p => {
+    const url = p.url.replace(/ /g, '%20');
+    return `<div class="photo-card" onclick="openLightbox('${url}')">
+      <img src="${url}" alt="${p.label}" loading="lazy" onerror="this.parentElement.style.display='none'">
       <div class="label">${p.label}</div>
-    </div>`
-  ).join('')}</div>`;
+    </div>`;
+  }).join('')}</div>`;
 }
 
 function formatContent(text) {
