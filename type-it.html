@@ -187,16 +187,13 @@ const chat = document.getElementById('chat'), input = document.getElementById('i
 const sendBtn = document.getElementById('sendBtn'), welcome = document.getElementById('welcome');
 const keyModal = document.getElementById('keyModal');
 let messages = [], isLoading = false;
-let photoIndex = [];  // {path, name, ext, keywords}
 
-// ── Environment detection ──
+// ── Environment ──
 const isGH = window.location.hostname === 'asnow365.github.io';
 const API_URL = isGH ? 'https://cloud.hongqiye.com/v1/messages' : '/api/chat';
-const ARCHIVE_LIST_URL = isGH ? 'archive-index.json' : '/api/archive-list';
 const ARCHIVE_BASE = isGH ? 'https://asnow365.github.io/giza-world/archive' : (window.location.origin + '/archive');
-const PHOTO_API_URL = isGH ? null : '/api/photo';  // GH Pages: fetch directly, no server
 
-// ── Key management ──
+// ── Key ──
 function getKey() { return localStorage.getItem('giza_anthropic_key') || ''; }
 function onKeySelect() {
   const sel = document.getElementById('keySelect'), inp = document.getElementById('apiKeyInput');
@@ -211,156 +208,61 @@ function saveKey() {
 }
 if (!getKey()) { keyModal.classList.remove('hidden'); }
 
-// ── Photo Index (loaded from server on init) ──
-async function loadPhotoIndex() {
-  try {
-    const resp = await fetch(ARCHIVE_LIST_URL);
-    if (resp.ok) {
-      const data = await resp.json();
-      photoIndex = data.files.map(f => ({
-        ...f,
-        keywords: buildKeywords(f.path, f.name)
-      }));
-      console.log('[VLM] Photo index loaded: ' + photoIndex.length + ' files');
-    }
-  } catch (e) {
-    console.warn('[VLM] Failed to load photo index:', e.message);
-  }
-}
-
-function buildKeywords(path, name) {
-  // Extract searchable keywords from path components
-  const parts = path.toLowerCase().replace(/\.(jpg|jpeg|png)$/,'').split('/');
-  const keywords = new Set();
-  parts.forEach(p => {
-    // Add each path segment as a keyword
-    keywords.add(p.trim());
-    // Add individual words
-    p.split(/[\s_-]+/).forEach(w => { if (w.length > 1) keywords.add(w); });
-  });
-  // Add filename stem
-  name.toLowerCase().replace(/\.(jpg|jpeg|png)$/,'').split(/[\s_-]+/).forEach(w => {
-    if (w.length > 1) keywords.add(w);
-  });
-  return [...keywords];
-}
-
-function searchPhotos(query) {
-  if (!photoIndex.length) return [];
-  const q = query.toLowerCase();
-  const qWords = q.split(/[\s,;.?!"'()]+/).filter(w => w.length > 1);
-
-  // Score each photo by keyword match count
-  const scored = photoIndex.map(p => {
-    let score = 0;
-    const searchSpace = [p.path.toLowerCase(), p.name.toLowerCase(), ...p.keywords].join(' ');
-    qWords.forEach(w => {
-      if (searchSpace.includes(w)) score += 1;
-      // Bonus for category matches
-      if (w === 'sarcophagus' && searchSpace.includes('sarcophagus')) score += 3;
-      if (w === 'architrave' && searchSpace.includes('architrave')) score += 3;
-      if ((w === 'map' || w === 'maps' || w === 'plan' || w === 'plans') && searchSpace.includes('maps')) score += 2;
-      if ((w === 'diary' || w === 'diaries') && searchSpace.includes('diary')) score += 2;
-      if (w === 'manuscript' && searchSpace.includes('manuscript')) score += 2;
-      if (w === 'relief' && searchSpace.includes('relief')) score += 2;
-      if ((w === 'photo' || w === 'photos') && searchSpace.includes('photos')) score += 1;
-    });
-    return { ...p, score };
-  });
-
-  // Return top matches (max 5), sorted by score descending
-  return scored
-    .filter(p => p.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5);
-}
-
-async function fetchPhotoBase64(path) {
-  try {
-    if (isGH) {
-      // GitHub Pages: fetch image directly, convert to base64 via canvas
-      const imgUrl = ARCHIVE_BASE + '/' + encodeURIComponent(path).replace(/%2F/g, '/');
-      const resp = await fetch(imgUrl);
-      if (!resp.ok) return null;
-      const blob = await resp.blob();
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const b64 = reader.result.split(',')[1];
-          resolve({ media_type: blob.type || 'image/jpeg', data: b64 });
-        };
-        reader.readAsDataURL(blob);
-      });
-    } else {
-      // Local server: use /api/photo endpoint
-      const resp = await fetch('/api/photo?path=' + encodeURIComponent(path));
-      if (!resp.ok) return null;
-      const data = await resp.json();
-      return { media_type: data.media_type, data: data.base64 };
-    }
-  } catch (e) {
-    console.warn('[VLM] Failed to fetch photo:', path, e.message);
-    return null;
-  }
-}
-
-// ── System prompt with tomb index + VLM instructions ──
+// ── System prompt — AI decides what to say and which photos to show ──
 const SYSTEM = `You are a Giza archaeology knowledge agent. You specialize in Ancient Egyptian, Giza pyramid complex, and Old Kingdom archaeology.
 
-## Two Modes
+You have access to the complete G7050–G7070 tomb archives. When relevant, show photos to users using this format:
 
-### 1. Knowledge Q&A + Photo Display (default)
-Answer questions using your knowledge. When users ask to see photos, use the text index below to generate photo display blocks. The photos will appear in the chat.
-
-### 2. VLM Visual Analysis (only when images are attached)
-When the user's message includes actual images, analyze what you SEE in them — describe inscriptions, carvings, details, and visual characteristics.
-
-## Archive Photo Index (for display)
-### G 7070 Tomb (Menkaure-related)
-- Photos (26): A3697P_ann_NS, A4220P_ann_NS, A4237_NS, A4284_NS, A4919_NS, A4920_NS, AAW1200, B5908_NS, B5909_NS, PDM_1993.068.16, PDM_1993.068.17, PDM_1993.130.01, PDM_1993.131.25, etc.
-- Sarcophagus (8): A5133_NS, A5134_NS, EG022547, EG022558, PDM_00395, PDM_00397, PDM_00398, PDM_00399
-- Architrave (5): A4227_NS, A4917_NS, A4918_NS, EG020397, EG020399
-- Maps & Plans (18): EG000588, EG002032, EG002884, EG016342, EG016344-EG016347, EG020395-EG020396, EG020400-EG020402, EG020406, EG021327, EG022467, EG025477, EG025562
-- Unpublished Manuscripts (4): UM1980, UM1981, UM1982, UM2342
-- Expedition Diaries (2): ED25_04_307, ED26_01_151
-
-### G 7060 Tomb
-- Photos (49), Maps & Plans (16), Expedition Diaries (7), Unpublished Manuscripts (15)
-
-### G 7050 Tomb
-- Photos (9), Maps & Plans (11), Expedition Diaries (8), Unpublished Manuscripts (6)
-
-## Photo Display Format
-When users want to see photos, use this format:
 \`\`\`photos
-[Sarcophagus A5133_NS](${ARCHIVE_BASE}/G%207070%20Files/G%207070%20Photos/Sarcophagus/A5133_NS.jpg)
-[EG022547](${ARCHIVE_BASE}/G%207070%20Files/G%207070%20Photos/Sarcophagus/EG022547.jpg)
+[Label](${ARCHIVE_BASE}/G%207070%20Files/G%207070%20Photos/Sarcophagus/A5133_NS.jpg)
 \`\`\`
 
-## Response Principles
-1. **Knowledge first** — answer questions from your training data and the archive index
-2. **Show photos proactively** — when relevant, include photo blocks so users can see the artifacts
-3. **If images are attached** — describe what you actually SEE (inscriptions, details, condition)
-4. **Cite specific references** — use MFA catalog numbers or archive filenames
-5. **Answer in English** — use clear academic language with Egyptian terminology`;
+## Archive Index
+### G 7070 (Menkaure)
+- Photos (26 total): A3697P_ann_NS, A4220P_ann_NS, A4237_NS, A4284_NS, A4919_NS, A4920_NS, AAW1200, B5908_NS, B5909_NS, PDM_1993.068.16, PDM_1993.068.17, PDM_1993.130.01, PDM_1993.131.25
+- Sarcophagus (8): A5133_NS, A5134_NS, EG022547, EG022558, PDM_00395–00399
+- Architrave (5): A4227_NS, A4917_NS, A4918_NS, EG020397, EG020399
+- Maps & Plans (18): EG000588, EG002032, EG002884, EG016342, EG016344–016347, EG020395–020396, EG020400–020402, EG020406, EG021327, EG022467, EG025477, EG025562
+- Unpublished Manuscripts (4): UM1980–UM1982, UM2342
+- Expedition Diaries (2): ED25_04_307, ED26_01_151
 
+### G 7060
+- Photos (49), inc. Sarcophagus (AAW1981–1988, A5132_NS, EG016340, EG022562), Architrave (A4937_NS, A4937P_ann_NS, A7706–7707_NS, B6503–6504_NS, EG020399–020415), Wall Reliefs (A4938_NS, A4946_NS, A7705_NS, A8314_NS, B6502–6513_NS, EG025500)
+- Maps & Plans (16): EG000588, EG015347, EG016338–016342, EG020403–020416, EG021327, EG022488, EG022745, EG025500
+- Expedition Diaries (7), Unpublished Manuscripts (15)
+
+### G 7050
+- Photos (9): A3697P_ann_NS, A4247_NS, A4283_NS, A5243_NS, A5290P_ann_NS, B5898_NS, PDM_1993.068.20–068.21, PDM_1993.130.01
+- Maps & Plans (11)
+- Expedition Diaries (8), Unpublished Manuscripts (6)
+
+## URL Pattern
+Photos: ${ARCHIVE_BASE}/G%20XXXX%20Files/G%20XXXX%20Photos/[category]/[filename].jpg
+Maps: ${ARCHIVE_BASE}/G%20XXXX%20Files/G%20XXXX%20Maps%20and%20Plans/[filename].jpg
+Diaries: ${ARCHIVE_BASE}/G%20XXXX%20Files/Expedition%20Diary%20Pages/[filename].jpg
+Manuscripts: ${ARCHIVE_BASE}/G%20XXXX%20Files/Unpublished%20Manuscripts/[filename].jpg
+
+## Rules
+1. Decide for yourself: answer directly, show photos, or both
+2. When showing photos, use the \`\`\`photos format with correct archive paths
+3. Cite specific filenames when referencing artifacts
+4. Answer in English`;
+
+// ── Render ──
 function render() {
   document.querySelectorAll('.msg').forEach(e => e.remove());
   if (welcome) welcome.style.display = messages.length === 0 && !isLoading ? '' : 'none';
-
   messages.forEach(m => {
     const div = document.createElement('div');
     div.className = `msg ${m.role}`;
     div.innerHTML = `
       <div class="msg-avatar">${m.role === 'assistant' ? '🏺' : '👤'}</div>
       <div class="msg-body">
-        ${m.vlmPhotos ? '<div class="vlm-badge">👁️ VLM analyzed ' + m.vlmPhotos + ' photo(s)</div>' : ''}
         <div class="msg-content">${formatContent(m.content)}</div>
         ${m.photos ? renderPhotos(m.photos) : ''}
       </div>`;
     chat.appendChild(div);
   });
-
   if (isLoading) {
     const div = document.createElement('div');
     div.className = 'msg assistant';
@@ -383,9 +285,8 @@ function formatContent(text) {
   return text
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/```photos\n?([\s\S]*?)```/g, '') // strip photo blocks (rendered separately)
-    .replace(/\n\n/g,'</p><p>')
-    .replace(/\n/g,'<br>')
+    .replace(/```photos\n?([\s\S]*?)```/g, '')
+    .replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')
     .replace(/`([^`]+)`/g,'<code>$1</code>');
 }
 
@@ -395,9 +296,7 @@ function extractPhotos(text) {
   const photos = [];
   const re = /\[(.+?)\]\((.+?\/archive\/.+?)\)/g;
   let m;
-  while ((m = re.exec(match[1])) !== null) {
-    photos.push({ label: m[1], url: m[2] });
-  }
+  while ((m = re.exec(match[1])) !== null) photos.push({ label: m[1], url: m[2] });
   return photos;
 }
 
@@ -409,20 +308,7 @@ function openLightbox(url) {
   document.body.appendChild(lb);
 }
 
-// ── Detect if user is asking for visual analysis (VLM) ──
-function isVisualQuery(text) {
-  const visualKeywords = [
-    'inscription', 'inscriptions', 'writing', 'written', 'text on',
-    'carving', 'carved', 'carvings', 'hieroglyph', 'hieroglyphs', 'glyph',
-    'read this', 'what does it say', 'what do you see',
-    'analyze this', 'examine this', 'look closely', 'inspect',
-    'identify the', 'recognition', 'recognize',
-    '字迹', '刻字', '铭文', '象形文字', '写了什么', '识别', '认出'
-  ];
-  const q = text.toLowerCase();
-  return visualKeywords.some(k => q.includes(k));
-}
-
+// ── Send ──
 async function send() {
   const text = input.value.trim();
   if (!text || isLoading) return;
@@ -430,52 +316,11 @@ async function send() {
   if (!key) { keyModal.classList.remove('hidden'); return; }
 
   input.value = ''; input.style.height = 'auto';
+  messages.push({ role: 'user', content: text });
   isLoading = true; sendBtn.disabled = true;
-
-  // ── Always search archive locally ──
-  const useVLM = isVisualQuery(text);
-  const matches = searchPhotos(text);
-  let imageBlocks = [];
-  let vlmPhotoCount = 0;
-
-  // Build photo URLs from local search results (always)
-  const foundPhotos = matches.slice(0, 6).map(m => ({
-    label: m.name,
-    url: ARCHIVE_BASE + '/' + m.path.split('/').map(encodeURIComponent).join('/')
-  }));
-
-  // Only fetch base64 for VLM visual analysis
-  if (useVLM && matches.length > 0) {
-    messages.push({ role: 'assistant', content: '👁️ Sending ' + Math.min(matches.length, 3) + ' photo(s) to VLM for visual analysis...' });
-    render();
-    const topMatches = matches.slice(0, 3);
-    const fetched = await Promise.all(topMatches.map(m => fetchPhotoBase64(m.path)));
-    imageBlocks = fetched.filter(Boolean);
-    vlmPhotoCount = imageBlocks.length;
-    messages.pop();
-  }
-
-  // ── Build API request ──
-  const userContent = [];
-  userContent.push({ type: 'text', text: text });
-  if (imageBlocks.length > 0) {
-    imageBlocks.forEach(img => {
-      userContent.push({ type: 'image', source: { type: 'base64', media_type: img.media_type, data: img.data } });
-    });
-  }
-
-  messages.push({ role: 'user', content: text, vlmPhotos: vlmPhotoCount });
   render();
 
-  const apiMessages = [
-    { role: 'system', content: SYSTEM },
-    ...messages.slice(-20).map(m => {
-      if (m.role === 'user' && m === messages[messages.length - 1] && imageBlocks.length > 0) {
-        return { role: 'user', content: userContent };
-      }
-      return { role: m.role, content: m.content };
-    })
-  ];
+  const apiMessages = [{ role: 'system', content: SYSTEM }, ...messages.slice(-20)];
 
   try {
     const resp = await fetch(API_URL, {
@@ -488,17 +333,9 @@ async function send() {
 
     const data = await resp.json();
     const reply = data.content?.filter(c => c.type === 'text').map(c => c.text).join('\n') || '(no response)';
-    const aiPhotos = extractPhotos(reply);
+    const photos = extractPhotos(reply);
 
-    // Merge: locally matched photos first, then any AI-generated ones
-    const seen = new Set(foundPhotos.map(p => p.url));
-    const allPhotos = [...foundPhotos, ...aiPhotos.filter(p => !seen.has(p.url))];
-
-    const lastUser = messages.findLast(m => m.role === 'user');
-    if (lastUser) lastUser.vlmPhotos = vlmPhotoCount;
-
-    messages.push({ role: 'assistant', content: reply, photos: allPhotos.length > 0 ? allPhotos : undefined });
-
+    messages.push({ role: 'assistant', content: reply, photos: photos.length > 0 ? photos : undefined });
   } catch (e) {
     messages.push({ role: 'assistant', content: `⚠️ Error：${e.message}` });
   }
@@ -514,8 +351,6 @@ input.addEventListener('input', () => {
   input.style.height = Math.min(input.scrollHeight, 160) + 'px';
 });
 
-// ── Initialize: load photo index ──
-loadPhotoIndex();
 render();
 </script>
 </body>
