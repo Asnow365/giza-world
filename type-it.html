@@ -94,6 +94,16 @@
     .typing span:nth-child(3) { animation-delay: .3s; }
     @keyframes bounce { 0%,60%,100%{opacity:.2;transform:translateY(0)} 30%{opacity:1;transform:translateY(-3px)} }
 
+    /* VLM status indicator */
+    .vlm-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: .6rem; background: rgba(201,169,110,.15); color: var(--accent);
+      margin-right: 6px; vertical-align: middle;
+    }
+    .searching-indicator {
+      text-align: center; padding: 8px; font-size: .65rem; color: var(--muted);
+    }
+
     .input-area { padding: 16px 20px 20px; flex-shrink: 0; display: flex; justify-content: center; }
     .input-wrap { max-width: 760px; width: 100%; position: relative; }
     .input-wrap textarea {
@@ -129,7 +139,7 @@
 <body>
 
 <div class="topbar">
-  <div class="brand">🏛️ <span>Type it!</span> · Ancient Egyptian Knowledge Agent</div>
+  <div class="brand">🏛️ <span>Type it!</span> · VLM-Powered Knowledge Agent</div>
   <a href="v3.html">← Home</a>
 </div>
 
@@ -137,23 +147,23 @@
   <div class="welcome" id="welcome">
     <div class="welcome-icon">🏺</div>
     <h2>Ask me anything about Ancient Egypt</h2>
-    <p>Accessing the complete G7050—G7070 tomb archives (171 photos/maps/manuscripts).<br>Try asking "Show me the sarcophagus photos" or "Display architrave excavation records"</p>
+    <p>G7050—G7070 tomb archives · 171 photos · <strong>VLM visual analysis</strong><br>The AI actually sees the photos and analyzes their content visually.</p>
     <div class="welcome-suggestions">
-      <button onclick="ask('Show me the G7070 sarcophagus photos')">🪦 Sarcophagus</button>
-      <button onclick="ask('What architrave photos are available?')">🏛️ Architrave</button>
-      <button onclick="ask('Show me G7070 archaeological maps and plans')">🗺️ Site Maps</button>
-      <button onclick="ask('What is the source of the Hathor triad?')">📖 Hathor Source</button>
+      <button onclick="ask('Show and visually analyze the G7070 sarcophagus photos — what do you see?')">🪦 Sarcophagus</button>
+      <button onclick="ask('Analyze the architrave inscriptions — describe the carvings')">🏛️ Architrave</button>
+      <button onclick="ask('Show the G7070 site maps and explain the layout')">🗺️ Site Maps</button>
+      <button onclick="ask('Examine the expedition diary pages — read and interpret them')">📜 Diaries</button>
     </div>
   </div>
 </div>
 
 <div class="input-area">
   <div class="input-wrap">
-    <textarea id="input" placeholder="Ask your question..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
+    <textarea id="input" placeholder="Ask about photos — the VLM will see them..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
     <button id="sendBtn" onclick="send()">↑</button>
   </div>
 </div>
-<div class="input-hint">Enter to send · Try: "Show sarcophagus" / "Architrave archives" / "Excavation diaries"</div>
+<div class="input-hint">Enter to send · VLM sees photos · Try: "Show sarcophagus" / "Analyze architrave" / "Read diary pages"</div>
 
 <div class="modal-overlay" id="keyModal">
   <div class="modal">
@@ -177,6 +187,7 @@ const chat = document.getElementById('chat'), input = document.getElementById('i
 const sendBtn = document.getElementById('sendBtn'), welcome = document.getElementById('welcome');
 const keyModal = document.getElementById('keyModal');
 let messages = [], isLoading = false;
+let photoIndex = [];  // {path, name, ext, keywords}
 
 // ── Key management ──
 function getKey() { return localStorage.getItem('giza_anthropic_key') || ''; }
@@ -193,15 +204,94 @@ function saveKey() {
 }
 if (!getKey()) { keyModal.classList.remove('hidden'); }
 
-// ── System prompt with tomb index ──
+// ── Photo Index (loaded from server on init) ──
+async function loadPhotoIndex() {
+  try {
+    const resp = await fetch('/api/archive-list');
+    if (resp.ok) {
+      const data = await resp.json();
+      photoIndex = data.files.map(f => ({
+        ...f,
+        keywords: buildKeywords(f.path, f.name)
+      }));
+      console.log(`[VLM] Photo index loaded: ${photoIndex.length} files`);
+    }
+  } catch (e) {
+    console.warn('[VLM] Failed to load photo index, using fallback:', e.message);
+  }
+}
+
+function buildKeywords(path, name) {
+  // Extract searchable keywords from path components
+  const parts = path.toLowerCase().replace(/\.(jpg|jpeg|png)$/,'').split('/');
+  const keywords = new Set();
+  parts.forEach(p => {
+    // Add each path segment as a keyword
+    keywords.add(p.trim());
+    // Add individual words
+    p.split(/[\s_-]+/).forEach(w => { if (w.length > 1) keywords.add(w); });
+  });
+  // Add filename stem
+  name.toLowerCase().replace(/\.(jpg|jpeg|png)$/,'').split(/[\s_-]+/).forEach(w => {
+    if (w.length > 1) keywords.add(w);
+  });
+  return [...keywords];
+}
+
+function searchPhotos(query) {
+  if (!photoIndex.length) return [];
+  const q = query.toLowerCase();
+  const qWords = q.split(/[\s,;.?!"'()]+/).filter(w => w.length > 1);
+
+  // Score each photo by keyword match count
+  const scored = photoIndex.map(p => {
+    let score = 0;
+    const searchSpace = [p.path.toLowerCase(), p.name.toLowerCase(), ...p.keywords].join(' ');
+    qWords.forEach(w => {
+      if (searchSpace.includes(w)) score += 1;
+      // Bonus for category matches
+      if (w === 'sarcophagus' && searchSpace.includes('sarcophagus')) score += 3;
+      if (w === 'architrave' && searchSpace.includes('architrave')) score += 3;
+      if ((w === 'map' || w === 'maps' || w === 'plan' || w === 'plans') && searchSpace.includes('maps')) score += 2;
+      if ((w === 'diary' || w === 'diaries') && searchSpace.includes('diary')) score += 2;
+      if (w === 'manuscript' && searchSpace.includes('manuscript')) score += 2;
+      if (w === 'relief' && searchSpace.includes('relief')) score += 2;
+      if ((w === 'photo' || w === 'photos') && searchSpace.includes('photos')) score += 1;
+    });
+    return { ...p, score };
+  });
+
+  // Return top matches (max 5), sorted by score descending
+  return scored
+    .filter(p => p.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+}
+
+async function fetchPhotoBase64(path) {
+  try {
+    const resp = await fetch('/api/photo?path=' + encodeURIComponent(path));
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return { media_type: data.media_type, data: data.base64 };
+  } catch (e) {
+    console.warn('[VLM] Failed to fetch photo:', path, e.message);
+    return null;
+  }
+}
+
+// ── System prompt with tomb index + VLM instructions ──
 const ARCHIVE_BASE = window.location.origin + '/archive';
-const SYSTEM = `You are a Giza archaeology knowledge agent, specializing in Ancient Egyptian, Giza pyramid complex, and Old Kingdom archaeology.
+const SYSTEM = `You are a Giza archaeology knowledge agent with VISION capabilities. You specialize in Ancient Egyptian, Giza pyramid complex, and Old Kingdom archaeology.
 
 ## Core Capabilities
-You have access to the complete archaeological archives of tombs G7050, G7060, and G7070. When users ask to "show XX photos", "what XX are available", or mention "architrave/sarcophagus/maps/diaries":
-1. **Match archive files** — find relevant photos from the archive index
-2. **Display photos** — use the special format to show actual artifact photos to the user
-3. **Provide academic context** — explain the photos with archaeological knowledge
+You have access to the complete archaeological archives of tombs G7050, G7060, and G7070. **When users ask about photos, the system will automatically attach actual archive images to their message for you to analyze visually.** You can actually SEE these photos — describe what you observe in them.
+
+## How It Works
+1. User asks a question about the tomb archives
+2. The system searches the archive and attaches relevant photos as images
+3. You receive the images and can analyze them visually
+4. You respond with what you actually SEE in the photos plus archaeological context
 
 ## Archive Index (171 files total)
 ### G 7070 Tomb (Menkaure-related)
@@ -213,30 +303,24 @@ You have access to the complete archaeological archives of tombs G7050, G7060, a
 - Expedition Diaries (2): ED25_04_307, ED26_01_151
 
 ### G 7060 Tomb
-- Photos (49)
-- Maps & Plans (16)
-- Expedition Diaries (7)
-- Unpublished Manuscripts (15)
+- Photos (49), Maps & Plans (16), Expedition Diaries (7), Unpublished Manuscripts (15)
 
 ### G 7050 Tomb
-- Photos (9)
-- Maps & Plans (11)
-- Expedition Diaries (8)
-- Unpublished Manuscripts (6)
+- Photos (9), Maps & Plans (11), Expedition Diaries (8), Unpublished Manuscripts (6)
 
 ## Photo Display Format
-When the user wants to see photos, use the following format to embed image links (served via /archive/ path):
+When you want to show photos to the user, use this format:
 \`\`\`photos
-[Sarcophagus A5133_NS](${ARCHIVE_BASE}/G%207070%20Files/G%207070%20Photos/Sarcophagus/A5133_NS.jpg)
-[Sarcophagus EG022547](${ARCHIVE_BASE}/G%207070%20Files/G%207070%20Photos/Sarcophagus/EG022547.jpg)
+[Label describing the photo](${ARCHIVE_BASE}/G%207070%20Files/G%207070%20Photos/Sarcophagus/A5133_NS.jpg)
 \`\`\`
 
 ## Response Principles
-1. **Show first, then explain** — when users want photos, provide photo links first, then add academic context
-2. **Distinguish fact from speculation** — label as source-based, reconstructed, or speculative
-3. **Cite specific references** — reference MFA catalog numbers or archive filenames when mentioning artifacts
-4. **Be concise and impactful** — images are more persuasive than text; prioritize showing archive photos
-5. **Answer in English** — use clear academic language with Egyptian terminology where appropriate`;
+1. **VISUAL ANALYSIS FIRST** — if the user's message includes images, describe what you actually SEE in them before providing historical context
+2. **Be specific about visual details** — mention colors, materials, carvings, inscriptions, damage patterns, and photographic qualities you observe
+3. **Distinguish observation from interpretation** — say "I can see..." for direct observations vs "This likely represents..." for interpretations
+4. **Cite specific references** — reference MFA catalog numbers or archive filenames when mentioning artifacts
+5. **Answer in English** — use clear academic language with Egyptian terminology where appropriate
+6. **If no images are attached** to the user's message, you can suggest which archive photos might help answer their question`;
 
 function render() {
   document.querySelectorAll('.msg').forEach(e => e.remove());
@@ -248,6 +332,7 @@ function render() {
     div.innerHTML = `
       <div class="msg-avatar">${m.role === 'assistant' ? '🏺' : '👤'}</div>
       <div class="msg-body">
+        ${m.vlmPhotos ? '<div class="vlm-badge">👁️ VLM analyzed ' + m.vlmPhotos + ' photo(s)</div>' : ''}
         <div class="msg-content">${formatContent(m.content)}</div>
         ${m.photos ? renderPhotos(m.photos) : ''}
       </div>`;
@@ -309,17 +394,59 @@ async function send() {
   if (!key) { keyModal.classList.remove('hidden'); return; }
 
   input.value = ''; input.style.height = 'auto';
-  messages.push({ role: 'user', content: text });
   isLoading = true; sendBtn.disabled = true;
+
+  // ── VLM: search for relevant photos ──
+  const matches = searchPhotos(text);
+  let imageBlocks = [];
+  let vlmPhotoCount = 0;
+
+  if (matches.length > 0) {
+    // Show searching indicator
+    messages.push({ role: 'assistant', content: '🔍 Searching archive for relevant photos... _(VLM will analyze matched images)_' });
+    render();
+
+    // Fetch up to 3 best matches as base64 (limit to avoid huge payloads)
+    const topMatches = matches.slice(0, 3);
+    const fetched = await Promise.all(topMatches.map(m => fetchPhotoBase64(m.path)));
+    imageBlocks = fetched.filter(Boolean);
+    vlmPhotoCount = imageBlocks.length;
+  }
+
+  // Remove searching indicator
+  if (matches.length > 0) messages.pop();
+
+  // ── Build user message with images ──
+  const userContent = [];
+  userContent.push({ type: 'text', text: text });
+  if (imageBlocks.length > 0) {
+    imageBlocks.forEach(img => {
+      userContent.push({
+        type: 'image',
+        source: { type: 'base64', media_type: img.media_type, data: img.data }
+      });
+    });
+  }
+
+  messages.push({ role: 'user', content: text, vlmPhotos: vlmPhotoCount });
   render();
 
-  const apiMessages = [{ role: 'system', content: SYSTEM }, ...messages.slice(-20)];
+  const apiMessages = [
+    { role: 'system', content: SYSTEM },
+    ...messages.slice(-20).map(m => {
+      // Reconstruct user message with images for the API
+      if (m.role === 'user' && m === messages[messages.length - 1] && imageBlocks.length > 0) {
+        return { role: 'user', content: userContent };
+      }
+      return { role: m.role, content: m.content };
+    })
+  ];
 
   try {
     const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 3072, messages: apiMessages })
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4096, messages: apiMessages })
     });
 
     if (!resp.ok) { const err = await resp.json().catch(()=>({})); throw new Error(err.error || 'HTTP '+resp.status); }
@@ -327,6 +454,11 @@ async function send() {
     const data = await resp.json();
     const reply = data.content?.filter(c => c.type === 'text').map(c => c.text).join('\n') || '(no response)';
     const photos = extractPhotos(reply);
+
+    // Update the last user message with vlmPhotoCount
+    const lastUser = messages.findLast(m => m.role === 'user');
+    if (lastUser) lastUser.vlmPhotos = vlmPhotoCount;
+
     messages.push({ role: 'assistant', content: reply, photos: photos.length > 0 ? photos : undefined });
 
   } catch (e) {
@@ -344,6 +476,8 @@ input.addEventListener('input', () => {
   input.style.height = Math.min(input.scrollHeight, 160) + 'px';
 });
 
+// ── Initialize: load photo index ──
+loadPhotoIndex();
 render();
 </script>
 </body>
