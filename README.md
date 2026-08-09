@@ -33,24 +33,15 @@ AI-generated reconstructions of Giza excavation figures and tomb scenes, rendere
 #### 👤 Character Models
 T-pose character models of the historical Egyptology experts who excavated the Giza pyramids.
 
-| Joseph | Reisner |
-|---|---|
-| [![Joseph T-pose](docs/scene-remake/joseph-t/joseph-t-04.png)](docs/scene-remake/joseph-t/) | [![Reisner T-pose](docs/scene-remake/reisner/reisner-01.png)](docs/scene-remake/reisner/) |
+| Joseph 1 | Joseph 2 | Reisner 1 | Reisner 2 |
+|---|---|---|---|
+| [![Joseph image_0 (5)](docs/scene-remake/joseph-t/joseph-t-03.png)](docs/scene-remake/joseph-t/joseph-t-03.png) | [![Joseph image_1 (1)](docs/scene-remake/joseph-t/joseph-t-05.png)](docs/scene-remake/joseph-t/joseph-t-05.png) | [![Reisner image_0](docs/scene-remake/reisner/reisner-01.png)](docs/scene-remake/reisner/reisner-01.png) | [![Reisner image_1](docs/scene-remake/reisner/reisner-02.png)](docs/scene-remake/reisner/reisner-02.png) |
 
 Character reference sheets:
 
 | Joseph reference | Joseph reference 2 |
 |---|---|
 | [![Joseph reference](docs/scene-remake/joseph-t/joseph-t-01.png)](docs/scene-remake/joseph-t/joseph-t-01.png) | [![Joseph reference 2](docs/scene-remake/joseph-t/joseph-t-06.png)](docs/scene-remake/joseph-t/joseph-t-06.png) |
-
-<details>
-<summary>More character views</summary>
-
-| Joseph 2 | Joseph 3 | Joseph 5 | Reisner 2 |
-|---|---|---|---|
-| [![Joseph 2](docs/scene-remake/joseph-t/joseph-t-02.png)](docs/scene-remake/joseph-t/joseph-t-02.png) | [![Joseph 3](docs/scene-remake/joseph-t/joseph-t-03.png)](docs/scene-remake/joseph-t/joseph-t-03.png) | [![Joseph 5](docs/scene-remake/joseph-t/joseph-t-05.png)](docs/scene-remake/joseph-t/joseph-t-05.png) | [![Reisner 2](docs/scene-remake/reisner/reisner-02.png)](docs/scene-remake/reisner/reisner-02.png) |
-
-</details>
 
 #### 🏺 Tomb Scene Reconstructions
 
