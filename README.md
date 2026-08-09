@@ -31,7 +31,7 @@ AI-powered Ancient Egyptian archaeological research platform. Browse 3D tomb rec
 AI-generated reconstructions of Giza excavation figures and tomb scenes, rendered from the project archive.
 
 #### 👤 Character Models
-T-pose character models for the Harvard–Boston Expedition figures featured in the archive.
+T-pose character models of the historical Egyptology experts who excavated the Giza pyramids.
 
 | Joseph | Reisner |
 |---|---|
