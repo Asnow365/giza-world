@@ -56,9 +56,9 @@ Character reference sheets:
 
 **Scene S1 — Tomb Interior** — multi-view reconstruction of the tomb interior.
 
-| View 1 | View 2 | View 3 |
-|---|---|---|
-| [![S1 view 1](docs/scene-remake/s1/s1-01.png)](docs/scene-remake/s1/s1-01.png) | [![S1 view 2](docs/scene-remake/s1/s1-02.png)](docs/scene-remake/s1/s1-02.png) | [![S1 view 3](docs/scene-remake/s1/s1-03.png)](docs/scene-remake/s1/s1-03.png) |
+| View 1 | View 2 |
+|---|---|
+| [![S1 view 1](docs/scene-remake/s1/s1-01.png)](docs/scene-remake/s1/s1-01.png) | [![S1 view 2](docs/scene-remake/s1/s1-02.png)](docs/scene-remake/s1/s1-02.png) |
 
 **Scene S3 — Work Chamber** — multi-view reconstruction of the chamber with furniture.
 
