@@ -22,10 +22,49 @@ AI-powered Ancient Egyptian archaeological research platform. Browse 3D tomb rec
 - Two Giza archaeological scenes with PLY/SPZ support
 - Orbit controls, scene switching, and character animation playback
 
-### 🔬 3D World Generation (Coming Soon)
-- See3D integration: single image → explorable 3D scene
-- Deploying on 4× NVIDIA RTX 4090 GPU server
+### 🔬 3D World Generation (New!)
+- See3D (BAAI, CVPR 2025 Highlight) deployed on 4× NVIDIA RTX 4090
+- Single image → explorable 3D Gaussian Splatting scene
 - End-to-end pipeline: upload photo → AI generates 3DGS → browser rendering
+
+### 🏛️ AI Scene & Character Reconstructions
+AI-generated reconstructions of Giza excavation figures and tomb scenes, rendered from the project archive.
+
+#### 👤 Character Models
+T-pose character models for the Harvard–Boston Expedition figures featured in the archive.
+
+| Joseph | Reisner |
+|---|---|
+| [![Joseph T-pose](docs/scene-remake/joseph-t/joseph-t-04.png)](docs/scene-remake/joseph-t/) | [![Reisner T-pose](docs/scene-remake/reisner/reisner-01.png)](docs/scene-remake/reisner/) |
+
+Character reference sheets:
+
+| Joseph reference | Joseph reference 2 |
+|---|---|
+| [![Joseph reference](docs/scene-remake/joseph-t/joseph-t-01.png)](docs/scene-remake/joseph-t/joseph-t-01.png) | [![Joseph reference 2](docs/scene-remake/joseph-t/joseph-t-06.png)](docs/scene-remake/joseph-t/joseph-t-06.png) |
+
+<details>
+<summary>More character views</summary>
+
+| Joseph 2 | Joseph 3 | Joseph 5 | Reisner 2 |
+|---|---|---|---|
+| [![Joseph 2](docs/scene-remake/joseph-t/joseph-t-02.png)](docs/scene-remake/joseph-t/joseph-t-02.png) | [![Joseph 3](docs/scene-remake/joseph-t/joseph-t-03.png)](docs/scene-remake/joseph-t/joseph-t-03.png) | [![Joseph 5](docs/scene-remake/joseph-t/joseph-t-05.png)](docs/scene-remake/joseph-t/joseph-t-05.png) | [![Reisner 2](docs/scene-remake/reisner/reisner-02.png)](docs/scene-remake/reisner/reisner-02.png) |
+
+</details>
+
+#### 🏺 Tomb Scene Reconstructions
+
+**Scene S1 — Tomb Interior** — multi-view reconstruction of the tomb interior.
+
+| View 1 | View 2 | View 3 |
+|---|---|---|
+| [![S1 view 1](docs/scene-remake/s1/s1-01.png)](docs/scene-remake/s1/s1-01.png) | [![S1 view 2](docs/scene-remake/s1/s1-02.png)](docs/scene-remake/s1/s1-02.png) | [![S1 view 3](docs/scene-remake/s1/s1-03.png)](docs/scene-remake/s1/s1-03.png) |
+
+**Scene S3 — Work Chamber** — multi-view reconstruction of the chamber with furniture.
+
+| View 1 | View 2 |
+|---|---|
+| [![S3 view 1](docs/scene-remake/s3/s3-01.png)](docs/scene-remake/s3/s3-01.png) | [![S3 view 2](docs/scene-remake/s3/s3-02.png)](docs/scene-remake/s3/s3-02.png) |
 
 ## Tech Stack
 
